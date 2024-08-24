@@ -7,11 +7,12 @@ import { abi as FACTORY_ABI, bytecode as FACTORY_BYTECODE } from '@uniswap/v2-co
 import { abi as ROUTER_ABI, bytecode as ROUTER_BYTECODE } from '@uniswap/v2-periphery/build/UniswapV2Router02.json'
 
 export const getSigners = async () => {
-    const [deployer, user0, user1] = await ethers.getSigners()
+    const [deployer, user0, user1, owner] = await ethers.getSigners()
     return {
-        deployer: deployer,
-        user0: user0,
-        user1: user1
+        deployer,
+        user0,
+        user1,
+        owner
     }
 }
 
@@ -81,6 +82,7 @@ export async function deployTestFixture() {
 
     const flashloanTakerFactory = await ethers.getContractFactory<FlashloanTaker__factory>('FlashloanTaker')
     const flashloanTaker = await flashloanTakerFactory.deploy(uniswapV2Router.address, testTrader.address)
+    await flashloanTaker.transferOwnership(signers.owner.address)
 
     return {
         signers,

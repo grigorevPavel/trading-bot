@@ -15,6 +15,7 @@ describe('VirtualDex::SwapFactory', () => {
     let deployer: SignerWithAddress
     let user0: SignerWithAddress
     let user1: SignerWithAddress
+    let owner: SignerWithAddress
     let flashloan: FlashloanTaker
     let pair: UniswapV2Pair
     let factory: UniswapV2Factory
@@ -34,6 +35,7 @@ describe('VirtualDex::SwapFactory', () => {
         deployer = state.signers.deployer
         user0 = state.signers.user0
         user1 = state.signers.user1
+        owner = state.signers.owner
 
         token0 = state.testTokenA
         token1 = state.testTokenB
@@ -52,6 +54,11 @@ describe('VirtualDex::SwapFactory', () => {
     }
 
     it('allows to take a flash swap', async () => {
-        
+        const reserves = await pair.getReserves()
+        expect(reserves[0]).eq(ONE.mul(100_000))
+        expect(reserves[1]).eq(ONE.mul(100_000))
+
+        // take tokenA
+        await flashloan.connect(owner).executeFlashSwap(token0.address, token1.address, ONE)
     })
 })

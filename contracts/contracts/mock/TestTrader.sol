@@ -9,11 +9,15 @@ interface ITestTrader {
 }
 
 contract TestTrader {
+  uint256 public constant PROFIT_NUMERATOR = 1_00;
+  uint256 public constant PROFIT_DENOMINATOR = 100_00;
+
   function execute(bytes calldata data) external {
     (address tokenSell, , uint256 targetAmount) = _decodeExecuteData(data);
     
     // testToken has openMint
-    ITestToken(tokenSell).openMint(msg.sender, targetAmount);
+    // send min target amount + 1% profit
+    ITestToken(tokenSell).openMint(msg.sender, targetAmount * (PROFIT_NUMERATOR + PROFIT_DENOMINATOR) / PROFIT_DENOMINATOR);
   }
 
   function _decodeExecuteData(bytes memory data) private pure returns(address tokenSell, address tokenBuy, uint256 targetAmount) {
