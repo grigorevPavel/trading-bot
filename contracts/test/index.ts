@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers/lib/ethers'
 import { deployments, ethers } from 'hardhat'
 import { randomAddress } from './helper'
-import { FlashloanTaker__factory, TestToken__factory, TestTrader__factory, Token__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Router02, UniswapV2Router02__factory, WETH__factory } from '@/typechain'
+import { FlashLoanTaker__factory, TestToken__factory, TestTrader__factory, Token__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Router02, UniswapV2Router02__factory, WETH__factory } from '@/typechain'
 
 import { abi as FACTORY_ABI, bytecode as FACTORY_BYTECODE } from '@uniswap/v2-core/build/UniswapV2Factory.json'
 import { abi as ROUTER_ABI, bytecode as ROUTER_BYTECODE } from '@uniswap/v2-periphery/build/UniswapV2Router02.json'
@@ -80,9 +80,9 @@ export async function deployTestFixture() {
     const testTraderFactory = await ethers.getContractFactory<TestTrader__factory>('TestTrader')
     const testTrader = await testTraderFactory.deploy()
 
-    const flashloanTakerFactory = await ethers.getContractFactory<FlashloanTaker__factory>('FlashloanTaker')
-    const flashloanTaker = await flashloanTakerFactory.deploy(uniswapV2Router.address, testTrader.address)
-    await flashloanTaker.transferOwnership(signers.owner.address)
+    const flashLoanTakerFactory = await ethers.getContractFactory<FlashLoanTaker__factory>('FlashLoanTaker')
+    const flashLoanTaker = await flashLoanTakerFactory.deploy(uniswapV2Router.address, testTrader.address)
+    await flashLoanTaker.transferOwnership(signers.owner.address)
 
     return {
         signers,
@@ -90,11 +90,11 @@ export async function deployTestFixture() {
             uniswapFactories: factories,
             testTokenFactory,
             testTraderFactory,
-            flashloanTakerFactory
+            flashLoanTakerFactory
         },
         uniswapV2Factory, uniswapV2Router, weth,
         testTokenA, testTokenB, testPair,
-        testTrader, flashloanTaker
+        testTrader, flashLoanTaker
     }
 }
 

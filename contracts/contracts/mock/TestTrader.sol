@@ -9,18 +9,26 @@ interface ITestTrader {
 }
 
 contract TestTrader {
-  uint256 public constant PROFIT_NUMERATOR = 1_00;
-  uint256 public constant PROFIT_DENOMINATOR = 100_00;
+  uint256 public constant PROFIT_FIX = 1 ether / 100; // 0.01 ETH
 
   function execute(bytes calldata data) external {
-    (address tokenSell, , uint256 targetAmount) = _decodeExecuteData(data);
-    
+    (address tokenIn, , uint256 targetAmount) = _decodeExecuteData(data);
+
     // testToken has openMint
     // send min target amount + 1% profit
-    ITestToken(tokenSell).openMint(msg.sender, targetAmount * (PROFIT_NUMERATOR + PROFIT_DENOMINATOR) / PROFIT_DENOMINATOR);
+    ITestToken(tokenIn).openMint(msg.sender, targetAmount + PROFIT_FIX);
   }
 
-  function _decodeExecuteData(bytes memory data) private pure returns(address tokenSell, address tokenBuy, uint256 targetAmount) {
-    (tokenSell, tokenBuy, targetAmount) = abi.decode(data, (address, address, uint256));
+  function _decodeExecuteData(
+    bytes memory data
+  )
+    private
+    pure
+    returns (address tokenIn, address tokenOut, uint256 targetAmount)
+  {
+    (tokenIn, tokenOut, targetAmount) = abi.decode(
+      data,
+      (address, address, uint256)
+    );
   }
 }

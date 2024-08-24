@@ -10,7 +10,7 @@ import { ITrader } from "./Trader.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract FlashloanTaker is IUniswapV2Callee, Ownable {
+contract FlashLoanTaker is IUniswapV2Callee, Ownable {
   using SafeERC20 for IERC20;
 
   // ------------ ERRORS ------------
@@ -58,47 +58,47 @@ contract FlashloanTaker is IUniswapV2Callee, Ownable {
     require(sender == address(this), NOT_ALLOWED);
 
     /*
-        contract has already received amount of tokenOut
-        trader has to make profit and gain target amount of tokenIn
+        contract has already received amount of tokenFlashLoan
+        trader has to make profit and gain target amount of tokenProfit
 
         amountOut = amount
-        target amount = getAmountIn(tokenOut)
+        target amount = getAmountIn(tokenFlashLoan)
     */
 
     // only one of amounts out != 0
     uint256 amount = amount0 > 0 ? amount0 : amount1;
 
-    (address tokenOut, address tokenIn) = amount0 == 0
+    (address tokenFlashLoan, address tokenProfit) = amount0 == 0
       ? (token1, token0)
       : (token0, token1);
 
     // send all Flash Loan amount to trader for the future operations
-    IERC20(tokenOut).safeTransfer(trader, amount);
+    IERC20(tokenFlashLoan).safeTransfer(trader, amount);
 
     // prepare calldata for trader
-    bytes memory traderCallData = abi.encode(tokenIn, tokenOut, targetAmount);
+    bytes memory traderCallData = abi.encode(tokenProfit, tokenFlashLoan, targetAmount);
 
-    uint256 outTokensBefore = IERC20(tokenIn).balanceOf(address(this));
+    uint256 outTokensBefore = IERC20(tokenProfit).balanceOf(address(this));
     // execute trading operations
     ITrader(trader).execute(traderCallData);
-    uint256 outTokensAfter = IERC20(tokenIn).balanceOf(address(this));
+    uint256 outTokensAfter = IERC20(tokenProfit).balanceOf(address(this));
 
     // expect we have sellTokensAfter - sellTokensBefore >= targetAmount
     // refill UniswapV2Pair contract to finish flash swap execution
     require(outTokensAfter > outTokensBefore + targetAmount, NO_PROFIT);
 
     // fulfill pair flash swap
-    IERC20(tokenIn).safeTransfer(pair, targetAmount);
+    IERC20(tokenProfit).safeTransfer(pair, targetAmount);
   }
 
   function executeFlashSwap(
-    address tokenOut,
-    address tokenIn,
-    uint256 amount
+    address tokenFlashLoan,
+    address tokenProfit,
+    uint256 amountFlashLoan
   ) external payable onlyOwner returns (uint256 profit) {
     // execute swap with a funds gaining callback
     address pair = IUniswapV2Factory(uniV2factory)
-      .getPair(tokenOut, tokenIn);
+      .getPair(tokenFlashLoan, tokenProfit);
     address token0 = IUniswapV2Pair(pair).token0();
     address token1 = IUniswapV2Pair(pair).token1();
     require(pair != address(0), "Pair not exists");
@@ -111,19 +111,19 @@ contract FlashloanTaker is IUniswapV2Callee, Ownable {
     // get reserves to calculate the amountSell required for amount amount
     (uint256 reserve0, uint256 reserve1, ) = IUniswapV2Pair(pair).getReserves();
 
-    if (token0 == tokenOut) {
-      amount0Out = amount;
+    if (token0 == tokenFlashLoan) {
+      amount0Out = amountFlashLoan;
       reserveIn = reserve1;
       reserveOut = reserve0;
     } else {
-      amount1Out = amount;
+      amount1Out = amountFlashLoan;
       reserveIn = reserve0;
       reserveOut = reserve1;
     }
 
-    // calculate the amountSell required for amount amount
+    // calculate the amountSell required for swap
     uint256 amountSell = IUniswapV2Router02(uniV2Router).getAmountIn(
-      amount,
+      amountFlashLoan,
       reserveIn,
       reserveOut
     );
@@ -131,14 +131,14 @@ contract FlashloanTaker is IUniswapV2Callee, Ownable {
     // prepare calldata from uniV2 swap to execute callback
     bytes memory data = abi.encode(token0, token1, amountSell, pair);
 
-    uint256 tokensBefore = IERC20(tokenIn).balanceOf(address(this));
+    uint256 tokensBefore = IERC20(tokenProfit).balanceOf(address(this));
 
     // performs a flash swap with gaining profit in uniswapV2Call => trader
     // flash swap reverts if profit - fees == 0
     IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), data);
 
     // calculate flash trade profit
-    profit = IERC20(tokenIn).balanceOf(address(this)) - tokensBefore;
+    profit = IERC20(tokenProfit).balanceOf(address(this)) - tokensBefore;
   }
 
   function _decodeUniswapV2CallData(
