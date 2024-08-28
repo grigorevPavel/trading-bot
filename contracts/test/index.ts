@@ -81,7 +81,7 @@ export async function deployTestFixture() {
     const testTrader = await testTraderFactory.deploy()
 
     const flashLoanTakerFactory = await ethers.getContractFactory<FlashLoanTaker__factory>('FlashLoanTaker')
-    const flashLoanTaker = await flashLoanTakerFactory.deploy(uniswapV2Router.address, testTrader.address)
+    const flashLoanTaker = await flashLoanTakerFactory.deploy(testTrader.address)
     await flashLoanTaker.transferOwnership(signers.owner.address)
 
     return {

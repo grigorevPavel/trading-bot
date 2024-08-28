@@ -8,7 +8,7 @@ import { BigNumber, BytesLike, Contract, ContractTransaction } from "ethers/lib/
 
 // ESSENTIAL TO IMPORT THIS
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { epsEqual, randomAddress } from "./helper";
+import { encodeRoute, epsEqual, randomAddress, Step } from "./helper";
 import { FlashLoanTaker, TestToken, TestTrader, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from "@/typechain";
 
 describe('VirtualDex::SwapFactory', () => {
@@ -58,14 +58,27 @@ describe('VirtualDex::SwapFactory', () => {
         expect(reserves[0]).eq(ONE.mul(100_000))
         expect(reserves[1]).eq(ONE.mul(100_000))
 
+        const route: Step[] = [
+            {
+                token: token0.address,
+                router: router.address
+            },
+            {
+                token: token1.address,
+                router: randomAddress()
+            }
+        ]
+
+        const routeData = encodeRoute(ONE, route)
+
         // take tokenA to get profit in tokenB
-        const profit = await flashLoan.connect(owner).callStatic.executeFlashSwap(token0.address, token1.address, ONE)
+        const profit = await flashLoan.connect(owner).callStatic.executeFlashSwap(routeData)
         const profitFix = await trader.PROFIT_FIX()
         expect(profit).eq(profitFix)
 
         const amountIn = await router.getAmountIn(ONE, reserves[1], reserves[0])
 
-        await flashLoan.connect(owner).executeFlashSwap(token0.address, token1.address, ONE)
+        await flashLoan.connect(owner).executeFlashSwap(routeData)
 
         const reservesAfter = await pair.getReserves()
         expect(reservesAfter[0]).eq(reserves[0].sub(ONE))

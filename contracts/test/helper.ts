@@ -92,11 +92,14 @@ export const epsEqualNumber = (
     return res
 }
 
-
-export type Investment = {
-    deadline: BigNumber
-    pair: string
-}
-
 export const ONE = ethers.constants.WeiPerEther
 
+export type Step = {
+    token: string,
+    router: string
+}
+
+export const encodeRoute = (amount: BigNumber, route: Step[]) => {
+    const encoder = new ethers.utils.AbiCoder()
+    return encoder.encode(["uint256","tuple(address token, address router)[]"], [amount, route])
+}
