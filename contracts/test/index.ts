@@ -98,3 +98,12 @@ export async function deployTestFixture() {
     }
 }
 
+export async function deployTraderFixture() {
+    const signers = await getSigners()
+
+    
+    return {
+        signers
+    }
+}
+

@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { IArbitrage } from "./Arbitrage.sol";
+import { Route } from "./libraries/Route.sol";
 
 interface IFlashLoanTaker {
   function executeFlashSwap(
@@ -53,15 +53,17 @@ contract FlashLoanTaker is
     (uint256 targetAmount, bytes memory routeData) = _decodeUniswapV2CallData(
       data
     );
-    (uint256 amount, IArbitrage.Step[] memory route) = _decodeRouteData(
+    (uint256 amount, Route.SinglePath[] memory route) = Route.decodeRouteData(
       routeData
     );
 
     IUniswapV2Router02 uniV2Router = IUniswapV2Router02(route[0].router);
 
+    (address tokenFirst, address tokenLast) = Route.getSideTokens(route);
+
     address pair = IUniswapV2Factory(uniV2Router.factory()).getPair(
-      route[0].token,
-      route[route.length - 1].token
+      tokenFirst,
+      tokenLast
     );
 
     // check that real UniswapV2Pair calls the callback
@@ -78,83 +80,58 @@ contract FlashLoanTaker is
     */
 
     // send all Flash Loan amount to trader for the future operations
-    IERC20(route[0].token).safeTransfer(trader, amount);
+    IERC20(tokenFirst).safeTransfer(trader, amount);
 
-    uint256 targetTokensBefore = IERC20(route[route.length - 1].token).balanceOf(
-      address(this)
-    );
+    uint256 targetTokensBefore = IERC20(tokenLast).balanceOf(address(this));
     // execute trading operations
     ITrader(trader).execute(targetAmount, routeData);
-    uint256 targetTokensAfter = IERC20(route[route.length - 1].token).balanceOf(
-      address(this)
-    );
+    uint256 targetTokensAfter = IERC20(tokenLast).balanceOf(address(this));
 
     // expect we have sellTokensAfter - sellTokensBefore >= targetAmount
     // refill UniswapV2Pair contract to finish flash swap execution
     require(targetTokensAfter > targetTokensBefore + targetAmount, NO_PROFIT);
 
     // fulfill pair flash swap
-    IERC20(route[route.length - 1].token).safeTransfer(pair, targetAmount);
+    IERC20(tokenLast).safeTransfer(pair, targetAmount);
   }
 
   function executeFlashSwap(
     bytes calldata routeData
   ) external onlyOwner returns (uint256 profit) {
-    (
-      uint256 amountFlashLoan,
-      IArbitrage.Step[] memory route
-    ) = _decodeRouteData(routeData);
+    (uint256 amountFlashLoan, Route.SinglePath[] memory route) = Route
+      .decodeRouteData(routeData);
 
     IUniswapV2Router02 uniV2Router = IUniswapV2Router02(route[0].router);
 
+    (address tokenFirst, address tokenLast) = Route.getSideTokens(route);
+
     // execute swap with a funds gaining callback
     address pair = IUniswapV2Factory(uniV2Router.factory()).getPair(
-      route[0].token,
-      route[route.length - 1].token
+      tokenFirst,
+      tokenLast
     );
 
     require(pair != address(0), "Pair not exists");
 
-    uint256 amount0Out;
-    uint256 amount1Out;
-    uint256 reserveIn;
-    uint256 reserveOut;
+    (
+      uint256 targetAmount,
+      uint256 amount0Out,
+      uint256 amount1Out,
+      ,
 
-    // get reserves to calculate the amountSell required for amount amount
-    (uint256 reserve0, uint256 reserve1, ) = IUniswapV2Pair(pair).getReserves();
-
-    if (IUniswapV2Pair(pair).token0() == route[0].token) {
-      amount0Out = amountFlashLoan;
-      reserveIn = reserve1;
-      reserveOut = reserve0;
-    } else {
-      amount1Out = amountFlashLoan;
-      reserveIn = reserve0;
-      reserveOut = reserve1;
-    }
-
-    // calculate the amountSell required for swap
-    uint256 amountSell = uniV2Router.getAmountIn(
-      amountFlashLoan,
-      reserveIn,
-      reserveOut
-    );
+    ) = _calculateAmounts(amountFlashLoan, tokenFirst, pair, uniV2Router);
 
     // prepare calldata from uniV2 swap to execute callback
-    bytes memory data = abi.encode(amountSell, routeData);
+    bytes memory data = abi.encode(targetAmount, routeData);
 
-    uint256 tokensBefore = IERC20(route[route.length - 1].token).balanceOf(
-      address(this)
-    );
+    uint256 tokensBefore = IERC20(tokenLast).balanceOf(address(this));
 
     // performs a flash swap with gaining profit in uniswapV2Call => trader
     // flash swap reverts if profit - fees <= 0
     IUniswapV2Pair(pair).swap(amount0Out, amount1Out, address(this), data);
 
     // calculate flash trade profit
-    profit =
-      IERC20(route[route.length - 1].token).balanceOf(address(this)) -
-      tokensBefore;
+    profit = IERC20(tokenLast).balanceOf(address(this)) - tokensBefore;
   }
 
   function _decodeUniswapV2CallData(
@@ -164,14 +141,40 @@ contract FlashLoanTaker is
     (targetAmount, routeBytes) = abi.decode(data, (uint256, bytes));
   }
 
-  function _decodeRouteData(
-    bytes memory data
+  function _calculateAmounts(
+    uint256 amountFlashLoan,
+    address tokenFirst,
+    address pair,
+    IUniswapV2Router02 uniV2Router
   )
     private
-    pure
-    returns (uint256 flashLoanAmount, IArbitrage.Step[] memory route)
+    view
+    returns (
+      uint256 targetAmount,
+      uint256 amount0Out,
+      uint256 amount1Out,
+      uint256 reserveIn,
+      uint256 reserveOut
+    )
   {
-    // ABI decode params
-    (flashLoanAmount, route) = abi.decode(data, (uint256, IArbitrage.Step[]));
+    // get reserves to calculate the amountSell required for amount amount
+    (uint256 reserve0, uint256 reserve1, ) = IUniswapV2Pair(pair).getReserves();
+
+    if (IUniswapV2Pair(pair).token0() == tokenFirst) {
+      amount0Out = amountFlashLoan;
+      reserveIn = reserve1;
+      reserveOut = reserve0;
+    } else {
+      amount1Out = amountFlashLoan;
+      reserveIn = reserve0;
+      reserveOut = reserve1;
+    }
+
+    // calculate the targetAmountIn required for swap
+    targetAmount = uniV2Router.getAmountIn(
+      amountFlashLoan,
+      reserveIn,
+      reserveOut
+    );
   }
 }

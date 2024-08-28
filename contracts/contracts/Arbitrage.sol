@@ -5,20 +5,10 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import { IFlashLoanTaker } from "./FlashloanTaker.sol";
+import { Route } from "./libraries/Route.sol";
 
-interface IArbitrage {
-  struct Step {
-    address token;
-    address router;
-  }
-}
-
-contract Arbitrage is IArbitrage, OwnableUpgradeable {
+contract Arbitrage is OwnableUpgradeable {
   using SafeERC20Upgradeable for IERC20Upgradeable;
-
-  string public constant PATH_LENGTH_INVALID = "Path length invalid";
-  string public constant ZERO_ADDRESS = "Zero address";
-  string public constant INVALID_STEP = "Invalid step";
 
   /*
     Arbitrage path may go through multiple based dexes
@@ -49,30 +39,13 @@ contract Arbitrage is IArbitrage, OwnableUpgradeable {
   }
 
   function makeArbitrage(
-    Step[] calldata route,
-    uint256 flashloanAmount
+    uint256 flashloanAmount,
+    Route.SinglePath[] calldata route
   ) external onlyOwner {
-    _validateRoute(route);
+    Route.validateRoute(route);
 
     IFlashLoanTaker(flashloan).executeFlashSwap(
-      _encode(flashloanAmount, route)
+      Route.encode(flashloanAmount, route)
     );
-  }
-
-  function _validateRoute(Step[] calldata route) private pure {
-    require(route.length >= 2, PATH_LENGTH_INVALID);
-
-    for (uint256 i; i < route.length; ++i) {
-      require(route[i].token != address(0), ZERO_ADDRESS);
-      if (i != 0) require(route[i].router != address(0), ZERO_ADDRESS);
-      require(route[i].router != route[i].token, INVALID_STEP);
-    }
-  }
-
-  function _encode(
-    uint256 flashloanAmount,
-    Step[] memory route
-  ) private pure returns (bytes memory res) {
-    res = abi.encode(flashloanAmount, route);
   }
 }
