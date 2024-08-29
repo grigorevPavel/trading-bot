@@ -8,12 +8,18 @@ import { Route } from "../libraries/Route.sol";
 contract TestTrader is ITrader {
   uint256 public constant PROFIT_FIX = 1 ether / 100; // 0.01 ETH
 
-  function execute(uint256 targetAmount, bytes calldata routeData) external {
+  uint256 public targetAmountIn;
+
+  function setTargetAmount(uint256 amountIn) external {
+    targetAmountIn = amountIn;
+  }
+
+  function execute(bytes calldata routeData) external {
     (, Route.SinglePath[] memory route) = Route.decodeRouteData(routeData);
     (, address tokenLast) = Route.getSideTokens(route);
 
     // testToken has openMint
     // send min target amount + 1% profit
-    ITestToken(tokenLast).openMint(msg.sender, targetAmount + PROFIT_FIX);
+    ITestToken(tokenLast).openMint(msg.sender, targetAmountIn + PROFIT_FIX);
   }
 }

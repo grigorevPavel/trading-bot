@@ -8,7 +8,7 @@ import { BigNumber, BytesLike, Contract, ContractTransaction } from "ethers/lib/
 
 // ESSENTIAL TO IMPORT THIS
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { encodeRoute, epsEqual, randomAddress, Step } from "./helper";
+import { encodeRoute, epsEqual, randomAddress, SinglePath } from "./helper";
 import { FlashLoanTaker, TestToken, TestTrader, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from "@/typechain";
 
 describe('VirtualDex::SwapFactory', () => {
@@ -53,30 +53,40 @@ describe('VirtualDex::SwapFactory', () => {
         return await ethers.getContractAt<UniswapV2Pair>('UniswapV2Pair', address)
     }
 
+    const getTargetAmount = async (amountOut: BigNumber, path: string[], router: UniswapV2Router02) => {
+        // target amount => amountsIn[0]
+        // amountOut => amountsIn.last
+
+        const amountsIn = await router.getAmountsIn(amountOut, path)
+        return amountsIn[0]
+    }
+
     it('allows to take a flash swap', async () => {
         const reserves = await pair.getReserves()
         expect(reserves[0]).eq(ONE.mul(100_000))
         expect(reserves[1]).eq(ONE.mul(100_000))
 
-        const route: Step[] = [
+        const route: SinglePath[] = [
             {
-                token: token0.address,
-                router: router.address
+                router: router.address,
+                tokens: [token0.address],
             },
             {
-                token: token1.address,
-                router: randomAddress()
+                router: randomAddress(),
+                tokens: [token1.address],
             }
         ]
 
         const routeData = encodeRoute(ONE, route)
+        
+        // set profit = amountIn on the test trader
+        const amountIn = await getTargetAmount(ONE, [token1.address, token0.address], router)
+        await trader.setTargetAmount(amountIn)
 
         // take tokenA to get profit in tokenB
         const profit = await flashLoan.connect(owner).callStatic.executeFlashSwap(routeData)
         const profitFix = await trader.PROFIT_FIX()
         expect(profit).eq(profitFix)
-
-        const amountIn = await router.getAmountIn(ONE, reserves[1], reserves[0])
 
         await flashLoan.connect(owner).executeFlashSwap(routeData)
 

@@ -5,8 +5,8 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import { ITrader } from "./Trader.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { ITrader } from "./Trader.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -84,7 +84,7 @@ contract FlashLoanTaker is
 
     uint256 targetTokensBefore = IERC20(tokenLast).balanceOf(address(this));
     // execute trading operations
-    ITrader(trader).execute(targetAmount, routeData);
+    ITrader(trader).execute(routeData);
     uint256 targetTokensAfter = IERC20(tokenLast).balanceOf(address(this));
 
     // expect we have sellTokensAfter - sellTokensBefore >= targetAmount

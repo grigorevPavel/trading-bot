@@ -94,12 +94,12 @@ export const epsEqualNumber = (
 
 export const ONE = ethers.constants.WeiPerEther
 
-export type Step = {
-    token: string,
-    router: string
+export type SinglePath = {
+    router: string,
+    tokens: string[],
 }
 
-export const encodeRoute = (amount: BigNumber, route: Step[]) => {
+export const encodeRoute = (amount: BigNumber, route: SinglePath[]) => {
     const encoder = new ethers.utils.AbiCoder()
-    return encoder.encode(["uint256","tuple(address token, address router)[]"], [amount, route])
+    return encoder.encode(["uint256", "tuple(address router, address[] tokens)[]"], [amount, route])
 }
