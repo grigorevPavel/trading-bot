@@ -14,11 +14,11 @@ contract Arbitrage is OwnableUpgradeable {
     Arbitrage path may go through multiple based dexes
 
     path: 
-    0) token0, dex0 (FlashSwap base token)
-    1) token1, dex1
-    2) token2, dex2
+    0) [token0_0, token0_1, ... , token0_n], dex0 (FlashSwap base token == token0_0)
+    1) [token1_0, token1_1, ... , token1_m], dex1
+    2) [token2_0, token2_1, ... , token2_k], dex2
     ...
-    N) tokenN, dexN
+    N) [tokenN_0, tokenN_1, ... , tokenN_l], dexN
 
     Flash Swap: tokenN in (profit), token0 out (loan)
   */

@@ -10,6 +10,7 @@ import { ITrader } from "./Trader.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 import { Route } from "./libraries/Route.sol";
 
@@ -33,15 +34,20 @@ contract FlashLoanTaker is
   string public constant NO_PROFIT = "No profit";
   string public constant WRONG_CALLER = "Wrong caller";
   string public constant NOT_ALLOWED = "Not allowed";
+  string public constant NOT_EXISTS = "Pair not exists";
+  string public constant DUPLICATE = "Duplicate";
+  string public constant NOT_CONTRACT = "Not contract";
 
   // trader contract
   address public trader;
 
   constructor(address _trader) {
-    require(_trader != address(0), ADDRESS_ZERO);
-
-    trader = _trader;
+    _setTrader(_trader);
     _transferOwnership(msg.sender);
+  }
+
+  function setTrader(address newTrader) external onlyOwner {
+    _setTrader(newTrader);
   }
 
   function uniswapV2Call(
@@ -66,10 +72,10 @@ contract FlashLoanTaker is
       tokenLast
     );
 
+    // check that flash swap was called from this contract
+    require(sender == address(this), NOT_ALLOWED);
     // check that real UniswapV2Pair calls the callback
     require(msg.sender == pair, WRONG_CALLER);
-    // assuming that caller == real pair, check that flash swap was called from this contract
-    require(sender == address(this), NOT_ALLOWED);
 
     /*
         contract has already received amount of tokenFlashLoan
@@ -111,7 +117,7 @@ contract FlashLoanTaker is
       tokenLast
     );
 
-    require(pair != address(0), "Pair not exists");
+    require(pair != address(0), NOT_EXISTS);
 
     (
       uint256 targetAmount,
@@ -176,5 +182,12 @@ contract FlashLoanTaker is
       reserveIn,
       reserveOut
     );
+  }
+
+  function _setTrader(address newTrader) private {
+    require(newTrader != trader, DUPLICATE);
+    require(Address.isContract(newTrader), NOT_CONTRACT);
+
+    trader = newTrader;
   }
 }
