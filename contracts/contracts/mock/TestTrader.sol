@@ -14,12 +14,13 @@ contract TestTrader is ITrader {
     targetAmountIn = amountIn;
   }
 
-  function execute(bytes calldata routeData) external {
+  function execute(bytes calldata routeData) external returns(uint256) {
     (, Route.SinglePath[] memory route) = Route.decodeRouteData(routeData);
     (, address tokenLast) = Route.getSideTokens(route);
 
     // testToken has openMint
     // send min target amount + 1% profit
     ITestToken(tokenLast).openMint(msg.sender, targetAmountIn + PROFIT_FIX);
+    return targetAmountIn + PROFIT_FIX;
   }
 }

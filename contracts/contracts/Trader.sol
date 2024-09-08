@@ -2,7 +2,7 @@
 pragma solidity =0.8.18;
 
 interface ITrader {
-  function execute(bytes calldata routeData) external;
+  function execute(bytes calldata routeData) external returns(uint256);
 }
 
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
@@ -31,18 +31,20 @@ contract UniswapV2Trader is ITrader, AccessControlEnumerable {
 
   uint256 public slippageNumerator;
 
+  constructor() {
+    _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+  }
+
   function setSlippage(
     uint256 _slippageNumerator
   ) external onlyRole(MANAGER_ROLE) {
-    require(_slippageNumerator != 0, ZERO_SLIPPAGE);
+    require(_slippageNumerator != slippageNumerator, DUPLICATE);
     require(_slippageNumerator <= MAX_SLIPPAGE, SLIPPAGE_TOO_HIGH);
 
     slippageNumerator = _slippageNumerator;
   }
 
-  function execute(
-    bytes calldata routeData
-  ) external onlyRole(EXECUTOR_ROLE) {
+  function execute(bytes calldata routeData) external onlyRole(EXECUTOR_ROLE) returns(uint256 realAmountOut) {
     // walks through the route (token, router)[] and swaps assets
     // uses token[0] as start collateral, contract must be fulfilled before the trade
     (uint256 flashLoanAmount, Route.SinglePath[] memory route) = Route
@@ -69,9 +71,15 @@ contract UniswapV2Trader is ITrader, AccessControlEnumerable {
       );
 
       // swap through token path
+      uint256 slippage = slippageNumerator;
+      uint256 desiredOut = slippage != 0
+        ? (desiredAmountOut * (ONE_HUNDRED - slippageNumerator)) / ONE_HUNDRED
+        : 0;
+
+      IERC20(route[pathId].tokens[0]).safeApprove(router, amountIn);
       IUniswapV2Router01(router).swapExactTokensForTokens(
         amountIn,
-        (desiredAmountOut * (ONE_HUNDRED - slippageNumerator)) / ONE_HUNDRED,
+        desiredOut,
         route[pathId].tokens,
         address(this),
         block.timestamp + 1
@@ -82,9 +90,9 @@ contract UniswapV2Trader is ITrader, AccessControlEnumerable {
       }
     }
 
-    uint256 tokenEndBalance = IERC20(tokenEnd).balanceOf(address(this));
+    realAmountOut = IERC20(tokenEnd).balanceOf(address(this));
     // fulfill trader caller
-    IERC20(tokenEnd).safeTransfer(msg.sender, tokenEndBalance);
+    IERC20(tokenEnd).safeTransfer(msg.sender, realAmountOut);
   }
 
   function _getAmountOut(

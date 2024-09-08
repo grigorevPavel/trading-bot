@@ -12,7 +12,7 @@ import { encodeRoute, epsEqual, randomAddress, SinglePath } from "./helper";
 import { FlashLoanTaker, FlashLoanTaker__factory, Reentrancy__factory, TestToken, TestTrader, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02 } from "@/typechain";
 import { ERRORS } from "./Errors";
 
-describe('VirtualDex::SwapFactory', () => {
+describe('FlashloanTaker', () => {
     let deployer: SignerWithAddress
     let user0: SignerWithAddress
     let user1: SignerWithAddress
@@ -73,11 +73,7 @@ describe('VirtualDex::SwapFactory', () => {
         const route: SinglePath[] = [
             {
                 router: router.address,
-                tokens: [token0.address],
-            },
-            {
-                router: randomAddress(),
-                tokens: [token1.address],
+                tokens: [token0.address, token1.address],
             }
         ]
 
@@ -107,11 +103,7 @@ describe('VirtualDex::SwapFactory', () => {
         const route: SinglePath[] = [
             {
                 router: router.address,
-                tokens: [token1.address],
-            },
-            {
-                router: randomAddress(),
-                tokens: [token0.address],
+                tokens: [token1.address, token0.address],
             }
         ]
 
@@ -149,11 +141,7 @@ describe('VirtualDex::SwapFactory', () => {
                 const route: SinglePath[] = [
                     {
                         router: router.address,
-                        tokens: [token1.address],
-                    },
-                    {
-                        router: randomAddress(),
-                        tokens: [randomAddress()],
+                        tokens: [token1.address, randomAddress()],
                     }
                 ]
 
@@ -179,11 +167,7 @@ describe('VirtualDex::SwapFactory', () => {
                 const route: SinglePath[] = [
                     {
                         router: router.address,
-                        tokens: [token0.address],
-                    },
-                    {
-                        router: randomAddress(),
-                        tokens: [token1.address],
+                        tokens: [token0.address, token1.address],
                     }
                 ]
 
@@ -218,11 +202,7 @@ describe('VirtualDex::SwapFactory', () => {
                 const route: SinglePath[] = [
                     {
                         router: router.address,
-                        tokens: [token0.address],
-                    },
-                    {
-                        router: randomAddress(),
-                        tokens: [token1.address],
+                        tokens: [token0.address, token1.address],
                     }
                 ]
 
@@ -253,11 +233,7 @@ describe('VirtualDex::SwapFactory', () => {
                 const route: SinglePath[] = [
                     {
                         router: router.address,
-                        tokens: [token0.address],
-                    },
-                    {
-                        router: randomAddress(),
-                        tokens: [token1.address],
+                        tokens: [token0.address, token1.address],
                     }
                 ]
 
@@ -293,11 +269,7 @@ describe('VirtualDex::SwapFactory', () => {
                 const route: SinglePath[] = [
                     {
                         router: router.address,
-                        tokens: [token0.address],
-                    },
-                    {
-                        router: randomAddress(),
-                        tokens: [token1.address],
+                        tokens: [token0.address, token1.address],
                     }
                 ]
 

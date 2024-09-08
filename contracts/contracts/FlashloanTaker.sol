@@ -88,14 +88,12 @@ contract FlashLoanTaker is
     // send all Flash Loan amount to trader for the future operations
     IERC20(tokenFirst).safeTransfer(trader, amount);
 
-    uint256 targetTokensBefore = IERC20(tokenLast).balanceOf(address(this));
     // execute trading operations
-    ITrader(trader).execute(routeData);
-    uint256 targetTokensAfter = IERC20(tokenLast).balanceOf(address(this));
+    uint256 realAmountOut = ITrader(trader).execute(routeData);
 
     // expect we have sellTokensAfter - sellTokensBefore >= targetAmount
     // refill UniswapV2Pair contract to finish flash swap execution
-    require(targetTokensAfter > targetTokensBefore + targetAmount, NO_PROFIT);
+    require(realAmountOut > targetAmount, NO_PROFIT);
 
     // fulfill pair flash swap
     IERC20(tokenLast).safeTransfer(pair, targetAmount);
