@@ -8,4 +8,11 @@ export const ERRORS = {
     REENTRANCY: 'ReentrancyGuard: reentrant call',
     DUPLICATE: "Duplicate",
     NOT_CONTRACT: "Not contract",
+    NOT_EXECUTOR_ROLE: 'AccessControl: account 0x70997970c51812dc3a010c7d01b50e0d17dc79c8 is missing role 0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63',
+    NOT_ENOUGH_START_COLLATERAL: "Not enough collateral",
+    AMOUNT_OUT_TOO_LOW: 'Amount out too low',
+    INVALID_LEN: "Invalid len",
+    ZERO_ADDRESS: "Zero address",
+    INVALID_SINGLE_PATH: "Invalid path",
+    INCONSISTENT_ROUTE: "Inconsistent route",
 }

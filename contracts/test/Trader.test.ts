@@ -32,6 +32,9 @@ describe('Trader', () => {
     const ADDRESS_ZERO = ethers.constants.AddressZero
     const deadline = BigNumber.from(10).pow(10)
     const wallet = randomAddress()
+    const ZERO = BigNumber.from(0)
+
+    const slippage = BigNumber.from(50)
 
     beforeEach(async function () {
         const state = await loadFixture(deployTraderFixture)
@@ -41,7 +44,7 @@ describe('Trader', () => {
         user1 = state.signers.user1
         owner = state.signers.owner
 
-        ;[tokenA, tokenB, tokenC, tokenD] = state.tokens
+            ;[tokenA, tokenB, tokenC, tokenD] = state.tokens
 
         factory0 = state.factory0
         factory1 = state.factory1
@@ -108,7 +111,7 @@ describe('Trader', () => {
             // start supply in tokenA
             await tokenA.connect(deployer).mint(trader.address, ONE)
 
-            const amountOut = await trader.callStatic.execute(encodeRoute(ONE, route))
+            const amountOut = await trader.callStatic.execute(encodeRoute(ONE, ZERO, route))
 
             // check amountOut
             const expectedAmountOut = await getRouteAmountOut(ONE, route)
@@ -118,10 +121,185 @@ describe('Trader', () => {
 
             // execute trade
             const before = await tokenA.balanceOf(deployer.address)
-            await trader.execute(encodeRoute(ONE, route))
-            const after = await tokenA.balanceOf(deployer.address) 
+            await trader.execute(encodeRoute(ONE, ZERO, route))
+            const after = await tokenA.balanceOf(deployer.address)
 
             expect(after.sub(before)).eq(amountOut)
+        })
+
+        describe('edge cases', () => {
+            describe('when called not from executor', () => {
+                it(`reverts with ${ERRORS.NOT_EXECUTOR_ROLE}`, async () => {
+                    await expect(trader.connect(user0).execute(encodeRoute(ONE, ZERO, []))).revertedWith(ERRORS.NOT_EXECUTOR_ROLE)
+                })
+            })
+
+            describe('when not enoung start tokens transferred to trader', () => {
+                it(`reverts with ${ERRORS.NOT_ENOUGH_START_COLLATERAL}`, async () => {
+                    await tokenA.transfer(trader.address, 999)
+                    // swap through all tokens
+                    const route: SinglePath[] = [
+                        {
+                            router: router0.address,
+                            tokens: [
+                                tokenA.address,
+                                tokenB.address,
+                                tokenC.address
+                            ]
+                        },
+                        {
+                            router: router1.address,
+                            tokens: [
+                                tokenC.address,
+                                tokenD.address,
+                                tokenA.address
+                            ]
+                        }
+                    ]
+
+                    await expect(trader.execute(encodeRoute(ONE, ZERO, route))).revertedWith(ERRORS.NOT_ENOUGH_START_COLLATERAL)
+                })
+            })
+
+            describe('when slippage set to != 0', () => {
+                it(`reverts when amountOut < amountOutMin`, async () => {
+
+                    // swap through all tokens
+                    const route: SinglePath[] = [
+                        {
+                            router: router0.address,
+                            tokens: [
+                                tokenA.address,
+                                tokenB.address,
+                                tokenC.address
+                            ]
+                        },
+                        {
+                            router: router1.address,
+                            tokens: [
+                                tokenC.address,
+                                tokenD.address,
+                                tokenA.address
+                            ]
+                        }
+                    ]
+
+                    const expectedAmountOut = await getRouteAmountOut(ONE, route)
+
+                    // frontrun causes slippage
+                    await tokenA.mint(trader.address, ONE.div(100))
+                    await trader.execute(encodeRoute(ONE.div(100), ZERO, route))
+
+                    // expect to swap for the previous price
+                    await tokenA.transfer(trader.address, ONE)
+                    await expect(trader.execute(encodeRoute(ONE, expectedAmountOut, route))).to.be.revertedWith(ERRORS.AMOUNT_OUT_TOO_LOW)
+                })
+            })
+
+            describe('when route is invalid', () => {
+                describe('when route len == 0', () => {
+                    it(`reverts with ${ERRORS.INVALID_LEN}`, async () => {
+                        await expect(trader.execute(encodeRoute(ONE, ZERO, []))).to.be.revertedWith(ERRORS.INVALID_LEN)
+                    })
+                })
+
+                describe('when route[i].len < 2', () => {
+                    it(`reverts with ${ERRORS.INVALID_SINGLE_PATH}`, async () => {
+                        const route: SinglePath[] = [
+                            {
+                                router: router0.address,
+                                tokens: [
+                                    tokenA.address,
+                                    tokenB.address,
+                                    tokenC.address
+                                ]
+                            },
+                            {
+                                router: router1.address,
+                                tokens: [
+                                    tokenC.address,
+                                ]
+                            }
+                        ]
+
+                        await expect(trader.execute(encodeRoute(ONE, ZERO, route))).to.be.revertedWith(ERRORS.INVALID_SINGLE_PATH)
+                    })
+                })
+
+                describe('when route[i].router == 0x0', () => {
+                    it(`reverts with ${ERRORS.ZERO_ADDRESS}`, async () => {
+                        const route: SinglePath[] = [
+                            {
+                                router: ADDRESS_ZERO,
+                                tokens: [
+                                    tokenA.address,
+                                    tokenB.address,
+                                    tokenC.address
+                                ]
+                            },
+                            {
+                                router: router1.address,
+                                tokens: [
+                                    tokenC.address,
+                                    tokenD.address,
+                                    tokenA.address
+                                ]
+                            }
+                        ]
+
+                        await expect(trader.execute(encodeRoute(ONE, ZERO, route))).to.be.revertedWith(ERRORS.ZERO_ADDRESS)
+                    })
+                })
+
+                describe('when route[i].token[j] == 0x0', () => {
+                    it(`reverts with ${ERRORS.ZERO_ADDRESS}`, async () => {
+                        const route: SinglePath[] = [
+                            {
+                                router: router0.address,
+                                tokens: [
+                                    tokenA.address,
+                                    tokenB.address,
+                                    tokenC.address
+                                ]
+                            },
+                            {
+                                router: router1.address,
+                                tokens: [
+                                    tokenC.address,
+                                    ADDRESS_ZERO,
+                                    tokenA.address
+                                ]
+                            }
+                        ]
+
+                        await expect(trader.execute(encodeRoute(ONE, ZERO, route))).to.be.revertedWith(ERRORS.ZERO_ADDRESS)
+                    })
+                })
+
+                describe('when path is inconsistent', () => {
+                    it(`reverts with ${ERRORS.INCONSISTENT_ROUTE}`, async () => {
+                        const route: SinglePath[] = [
+                            {
+                                router: router0.address,
+                                tokens: [
+                                    tokenA.address,
+                                    tokenB.address,
+                                ]
+                            },
+                            {
+                                router: router1.address,
+                                tokens: [
+                                    tokenC.address,
+                                    tokenD.address,
+                                    tokenA.address
+                                ]
+                            }
+                        ]
+
+                        await expect(trader.execute(encodeRoute(ONE, ZERO, route))).to.be.revertedWith(ERRORS.INCONSISTENT_ROUTE)
+                    })
+                })
+            })
         })
     })
 })

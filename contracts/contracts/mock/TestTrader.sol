@@ -15,7 +15,7 @@ contract TestTrader is ITrader {
   }
 
   function execute(bytes calldata routeData) external returns(uint256) {
-    (, Route.SinglePath[] memory route) = Route.decodeRouteData(routeData);
+    (, , Route.SinglePath[] memory route) = Route.decodeRouteData(routeData);
     (, address tokenLast) = Route.getSideTokens(route);
 
     // testToken has openMint

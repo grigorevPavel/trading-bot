@@ -30,6 +30,7 @@ describe('FlashloanTaker', () => {
     const ADDRESS_ZERO = ethers.constants.AddressZero
     const deadline = BigNumber.from(10).pow(10)
     const wallet = randomAddress()
+    const ZERO = BigNumber.from(0)
 
     beforeEach(async function () {
         const state = await loadFixture(deployTestFixture)
@@ -77,7 +78,7 @@ describe('FlashloanTaker', () => {
             }
         ]
 
-        const routeData = encodeRoute(ONE, route)
+        const routeData = encodeRoute(ONE, ZERO, route)
 
         // set profit = amountIn on the test trader
         const amountIn = await getTargetAmount(ONE, [token1.address, token0.address], router)
@@ -107,7 +108,7 @@ describe('FlashloanTaker', () => {
             }
         ]
 
-        const routeData = encodeRoute(ONE, route)
+        const routeData = encodeRoute(ONE, ZERO, route)
 
         // set profit = amountIn on the test trader
         const amountIn = await getTargetAmount(ONE, [token0.address, token1.address], router)
@@ -145,7 +146,7 @@ describe('FlashloanTaker', () => {
                     }
                 ]
 
-                const routeData = encodeRoute(ONE, route)
+                const routeData = encodeRoute(ONE, ZERO, route)
 
                 // take tokenA to get profit in tokenB
                 await expect(flashLoan.connect(owner).executeFlashSwap(routeData)).to.be.revertedWith(ERRORS.NOT_EXISTS)
@@ -171,7 +172,7 @@ describe('FlashloanTaker', () => {
                     }
                 ]
 
-                const routeData = encodeRoute(ONE.mul(100), route)
+                const routeData = encodeRoute(ONE.mul(100), ZERO, route)
 
                 // set profit = amountIn on the test trader
                 const amountIn = await getTargetAmount(ONE.mul(100), [token1.address, token0.address], router)
@@ -206,7 +207,7 @@ describe('FlashloanTaker', () => {
                     }
                 ]
 
-                const routeData = encodeRoute(ONE.mul(100), route)
+                const routeData = encodeRoute(ONE.mul(100), ZERO, route)
 
                 // set profit = amountIn on the test trader
                 const amountIn = await getTargetAmount(ONE.mul(100), [token1.address, token0.address], router)
@@ -237,7 +238,7 @@ describe('FlashloanTaker', () => {
                     }
                 ]
 
-                const routeData = encodeRoute(ONE.mul(100), route)
+                const routeData = encodeRoute(ONE.mul(100), ZERO, route)
 
                 // set profit = amountIn on the test trader
                 const amountIn = await getTargetAmount(ONE.mul(100), [token1.address, token0.address], router)
@@ -273,7 +274,7 @@ describe('FlashloanTaker', () => {
                     }
                 ]
 
-                const routeData = encodeRoute(ONE.mul(100), route)
+                const routeData = encodeRoute(ONE.mul(100), ZERO, route)
 
                 // set profit = amountIn on the test trader
                 const amountIn = await getTargetAmount(ONE.mul(100), [token1.address, token0.address], router)

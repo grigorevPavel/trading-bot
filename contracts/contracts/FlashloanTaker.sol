@@ -59,7 +59,7 @@ contract FlashLoanTaker is
     (uint256 targetAmount, bytes memory routeData) = _decodeUniswapV2CallData(
       data
     );
-    (uint256 amount, Route.SinglePath[] memory route) = Route.decodeRouteData(
+    (uint256 amount, , Route.SinglePath[] memory route) = Route.decodeRouteData(
       routeData
     );
 
@@ -102,7 +102,7 @@ contract FlashLoanTaker is
   function executeFlashSwap(
     bytes calldata routeData
   ) external onlyOwner returns (uint256 profit) {
-    (uint256 amountFlashLoan, Route.SinglePath[] memory route) = Route
+    (uint256 amountFlashLoan, , Route.SinglePath[] memory route) = Route
       .decodeRouteData(routeData);
 
     IUniswapV2Router02 uniV2Router = IUniswapV2Router02(route[0].router);

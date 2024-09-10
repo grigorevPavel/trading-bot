@@ -14,19 +14,20 @@ library Route {
 
   function encode(
     uint256 flashloanAmount,
+    uint256 minAmountOut,
     SinglePath[] memory route
   ) internal pure returns (bytes memory res) {
-    res = abi.encode(flashloanAmount, route);
+    res = abi.encode(flashloanAmount, minAmountOut, route);
   }
 
   function decodeRouteData(
     bytes memory data
-  ) internal pure returns (uint256 flashLoanAmount, SinglePath[] memory route) {
+  ) internal pure returns (uint256 flashLoanAmount, uint256 minAmountOut, SinglePath[] memory route) {
     // ABI decode params
-    (flashLoanAmount, route) = abi.decode(data, (uint256, SinglePath[]));
+    (flashLoanAmount, minAmountOut, route) = abi.decode(data, (uint256, uint256, SinglePath[]));
   }
 
-  function validateRoute(SinglePath[] calldata route) internal pure {
+  function validateRoute(SinglePath[] memory route) internal pure {
     require(route.length >= 1, INVALID_LEN);
 
     // do not check for max len and cycles in path (todo off-chain)

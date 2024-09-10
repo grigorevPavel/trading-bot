@@ -99,7 +99,7 @@ export type SinglePath = {
     tokens: string[],
 }
 
-export const encodeRoute = (amount: BigNumber, route: SinglePath[]) => {
+export const encodeRoute = (amountIn: BigNumber, minAmountOut: BigNumber, route: SinglePath[]) => {
     const encoder = new ethers.utils.AbiCoder()
-    return encoder.encode(["uint256", "tuple(address router, address[] tokens)[]"], [amount, route])
+    return encoder.encode(["uint256", "uint256", "tuple(address router, address[] tokens)[]"], [amountIn, minAmountOut, route])
 }
