@@ -16,6 +16,7 @@ import { Route } from "./libraries/Route.sol";
 
 interface IFlashLoanTaker {
   function executeFlashSwap(
+    bytes calldata flashloanData,
     bytes calldata routeData
   ) external returns (uint256 profit);
 }
@@ -56,14 +57,14 @@ contract FlashLoanTaker is
     uint,
     bytes calldata data
   ) external override nonReentrant {
-    (uint256 targetAmount, bytes memory routeData) = _decodeUniswapV2CallData(
+    (address flashloanRouter, uint256 targetAmount, bytes memory routeData) = _decodeUniswapV2CallData(
       data
     );
     (uint256 amount, , Route.SinglePath[] memory route) = Route.decodeRouteData(
       routeData
     );
 
-    IUniswapV2Router02 uniV2Router = IUniswapV2Router02(route[0].router);
+    IUniswapV2Router02 uniV2Router = IUniswapV2Router02(flashloanRouter);
 
     (address tokenFirst, address tokenLast) = Route.getSideTokens(route);
 
@@ -100,12 +101,16 @@ contract FlashLoanTaker is
   }
 
   function executeFlashSwap(
+    bytes calldata flashloanData,
     bytes calldata routeData
   ) external onlyOwner returns (uint256 profit) {
     (uint256 amountFlashLoan, , Route.SinglePath[] memory route) = Route
       .decodeRouteData(routeData);
 
-    IUniswapV2Router02 uniV2Router = IUniswapV2Router02(route[0].router);
+    (address flashloanRouter) = _decodeFlashloanData(flashloanData);
+    require(flashloanRouter != address(0), ADDRESS_ZERO);
+
+    IUniswapV2Router02 uniV2Router = IUniswapV2Router02(flashloanRouter);
 
     (address tokenFirst, address tokenLast) = Route.getSideTokens(route);
 
@@ -126,7 +131,7 @@ contract FlashLoanTaker is
     ) = _calculateAmounts(amountFlashLoan, tokenFirst, pair, uniV2Router);
 
     // prepare calldata from uniV2 swap to execute callback
-    bytes memory data = abi.encode(targetAmount, routeData);
+    bytes memory data = abi.encode(flashloanRouter, targetAmount, routeData);
 
     uint256 tokensBefore = IERC20(tokenLast).balanceOf(address(this));
 
@@ -140,9 +145,9 @@ contract FlashLoanTaker is
 
   function _decodeUniswapV2CallData(
     bytes memory data
-  ) private pure returns (uint256 targetAmount, bytes memory routeBytes) {
+  ) private pure returns (address flashloanRouter, uint256 targetAmount, bytes memory routeBytes) {
     // ABI decode params
-    (targetAmount, routeBytes) = abi.decode(data, (uint256, bytes));
+    (flashloanRouter, targetAmount, routeBytes) = abi.decode(data, (address, uint256, bytes));
   }
 
   function _calculateAmounts(
@@ -187,5 +192,9 @@ contract FlashLoanTaker is
     require(Address.isContract(newTrader), NOT_CONTRACT);
 
     trader = newTrader;
+  }
+
+  function _decodeFlashloanData(bytes memory data) private pure returns(address flashloanRouter) {
+    (flashloanRouter) = abi.decode(data, (address));
   }
 }

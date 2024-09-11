@@ -41,12 +41,18 @@ contract Arbitrage is OwnableUpgradeable {
   function makeArbitrage(
     uint256 flashloanAmount,
     uint256 amountOutMin,
+    address flashloanRouter,
     Route.SinglePath[] calldata route
   ) external onlyOwner {
     Route.validateRoute(route);
 
     IFlashLoanTaker(flashloan).executeFlashSwap(
+      _encodeFlashloanData(flashloanRouter),
       Route.encode(flashloanAmount, amountOutMin, route)
     );
+  }
+
+  function _encodeFlashloanData(address flashloanRouter) private pure returns(bytes memory) {
+    return abi.encode(flashloanRouter);
   }
 }

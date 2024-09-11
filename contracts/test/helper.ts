@@ -103,3 +103,8 @@ export const encodeRoute = (amountIn: BigNumber, minAmountOut: BigNumber, route:
     const encoder = new ethers.utils.AbiCoder()
     return encoder.encode(["uint256", "uint256", "tuple(address router, address[] tokens)[]"], [amountIn, minAmountOut, route])
 }
+
+export const encodeFlashloanData = (router: string) => {
+    const encoder = new ethers.utils.AbiCoder()
+    return encoder.encode(["address"], [router])
+}
