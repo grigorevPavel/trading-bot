@@ -77,9 +77,9 @@ describe('Trader', () => {
 
     const getRouteAmountOut = async (amountIn: BigNumber, route: SinglePath[]) => {
         let curAmountIn = amountIn
-        for (let path of route) {
-            const router = await ethers.getContractAt<UniswapV2Router02>('UniswapV2Router02', path.router)
-            const amountsOut = await router.getAmountsOut(curAmountIn, path.tokens)
+        for (let pathId = 1; pathId < route.length; ++pathId) {
+            const router = await ethers.getContractAt<UniswapV2Router02>('UniswapV2Router02', route[pathId].router)
+            const amountsOut = await router.getAmountsOut(curAmountIn, route[pathId].tokens)
             curAmountIn = amountsOut[amountsOut.length - 1]
         }
         // last amount out is stored here
@@ -91,16 +91,18 @@ describe('Trader', () => {
             // swap through all tokens
             const route: SinglePath[] = [
                 {
+                    // flashloan path
                     router: router0.address,
                     tokens: [
                         tokenA.address,
                         tokenB.address,
-                        tokenC.address
                     ]
                 },
                 {
+                    // trader path
                     router: router1.address,
                     tokens: [
+                        tokenB.address,
                         tokenC.address,
                         tokenD.address,
                         tokenA.address
@@ -109,7 +111,7 @@ describe('Trader', () => {
             ]
 
             // start supply in tokenA
-            await tokenA.connect(deployer).mint(trader.address, ONE)
+            await tokenB.connect(deployer).mint(trader.address, ONE)
 
             const amountOut = await trader.callStatic.execute(encodeRoute(ONE, ZERO, route))
 
@@ -129,8 +131,8 @@ describe('Trader', () => {
 
         describe('edge cases', () => {
             describe('when called not from executor', () => {
-                it(`reverts with ${ERRORS.NOT_EXECUTOR_ROLE}`, async () => {
-                    await expect(trader.connect(user0).execute(encodeRoute(ONE, ZERO, []))).revertedWith(ERRORS.NOT_EXECUTOR_ROLE)
+                it(`reverts with ${ERRORS.NO_ROLE()}`, async () => {
+                    await expect(trader.connect(user0).execute(encodeRoute(ONE, ZERO, []))).reverted
                 })
             })
 
@@ -144,12 +146,12 @@ describe('Trader', () => {
                             tokens: [
                                 tokenA.address,
                                 tokenB.address,
-                                tokenC.address
                             ]
                         },
                         {
                             router: router1.address,
                             tokens: [
+                                tokenB.address,
                                 tokenC.address,
                                 tokenD.address,
                                 tokenA.address
@@ -171,12 +173,12 @@ describe('Trader', () => {
                             tokens: [
                                 tokenA.address,
                                 tokenB.address,
-                                tokenC.address
                             ]
                         },
                         {
                             router: router1.address,
                             tokens: [
+                                tokenB.address,
                                 tokenC.address,
                                 tokenD.address,
                                 tokenA.address
@@ -187,11 +189,11 @@ describe('Trader', () => {
                     const expectedAmountOut = await getRouteAmountOut(ONE, route)
 
                     // frontrun causes slippage
-                    await tokenA.mint(trader.address, ONE.div(100))
+                    await tokenB.mint(trader.address, ONE.div(100))
                     await trader.execute(encodeRoute(ONE.div(100), ZERO, route))
 
                     // expect to swap for the previous price
-                    await tokenA.transfer(trader.address, ONE)
+                    await tokenB.transfer(trader.address, ONE)
                     await expect(trader.execute(encodeRoute(ONE, expectedAmountOut, route))).to.be.revertedWith(ERRORS.AMOUNT_OUT_TOO_LOW)
                 })
             })
@@ -211,13 +213,12 @@ describe('Trader', () => {
                                 tokens: [
                                     tokenA.address,
                                     tokenB.address,
-                                    tokenC.address
                                 ]
                             },
                             {
                                 router: router1.address,
                                 tokens: [
-                                    tokenC.address,
+                                    tokenB.address
                                 ]
                             }
                         ]
@@ -234,12 +235,12 @@ describe('Trader', () => {
                                 tokens: [
                                     tokenA.address,
                                     tokenB.address,
-                                    tokenC.address
                                 ]
                             },
                             {
                                 router: router1.address,
                                 tokens: [
+                                    tokenB.address,
                                     tokenC.address,
                                     tokenD.address,
                                     tokenA.address
@@ -259,14 +260,14 @@ describe('Trader', () => {
                                 tokens: [
                                     tokenA.address,
                                     tokenB.address,
-                                    tokenC.address
                                 ]
                             },
                             {
                                 router: router1.address,
                                 tokens: [
-                                    tokenC.address,
+                                    tokenB.address,
                                     ADDRESS_ZERO,
+                                    tokenD.address,
                                     tokenA.address
                                 ]
                             }
@@ -298,6 +299,41 @@ describe('Trader', () => {
 
                         await expect(trader.execute(encodeRoute(ONE, ZERO, route))).to.be.revertedWith(ERRORS.INCONSISTENT_ROUTE)
                     })
+                })
+            })
+
+            describe('when reentrancy occurs', () => {
+                it(`reverts with ${ERRORS.NO_ROLE()}`, async () => {
+                    const reentrancyFactory = await ethers.getContractFactory<Reentrancy__factory>('Reentrancy')
+
+                    const reentrantToken = await reentrancyFactory.deploy()
+
+                    const route: SinglePath[] = [
+                        {
+                            router: router0.address,
+                            tokens: [
+                                reentrantToken.address,
+                                tokenB.address,
+                            ]
+                        },
+                        {
+                            router: router1.address,
+                            tokens: [
+                                tokenB.address,
+                                tokenA.address
+                            ]
+                        }
+                    ]
+
+                    const encodedRoute = encodeRoute(ONE, ZERO, route)
+
+                    let ABI = ['function execute(bytes calldata) external returns(uint256)'];
+                    let iface = new ethers.utils.Interface(ABI);
+                    const callData = iface.encodeFunctionData('execute', [encodedRoute]);
+
+                    await reentrantToken.setCall(trader.address, callData)
+
+                    await expect(trader.execute(encodedRoute)).to.be.reverted
                 })
             })
         })

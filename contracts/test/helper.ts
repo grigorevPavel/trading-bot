@@ -104,7 +104,14 @@ export const encodeRoute = (amountIn: BigNumber, minAmountOut: BigNumber, route:
     return encoder.encode(["uint256", "uint256", "tuple(address router, address[] tokens)[]"], [amountIn, minAmountOut, route])
 }
 
-export const encodeFlashloanData = (router: string) => {
-    const encoder = new ethers.utils.AbiCoder()
-    return encoder.encode(["address"], [router])
+export async function enableInitializer(contract: string) {
+    const INITIALIZERS_SLOT = 0
+    const value = ethers.utils.hexlify(
+        ethers.utils.zeroPad(BigNumber.from(0)._hex, 32)
+    )
+    await ethers.provider.send('hardhat_setStorageAt', [
+        contract,
+        ethers.utils.hexValue(INITIALIZERS_SLOT),
+        value,
+    ])
 }

@@ -2,7 +2,13 @@
 pragma solidity =0.8.18;
 
 interface ITrader {
-  function execute(bytes calldata routeData) external returns(uint256);
+  event ExecutedTrade(
+    address indexed tokenStart,
+    address indexed tokenLast,
+    uint256 amountIn,
+    uint256 amountOut
+  );
+  function execute(bytes calldata routeData) external returns (uint256);
 }
 
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
@@ -20,8 +26,7 @@ contract UniswapV2Trader is ITrader, AccessControlEnumerable {
   string public constant ZERO_SLIPPAGE = "Zero slippage";
   string public constant SLIPPAGE_TOO_HIGH = "Slippage too high";
   string public constant DUPLICATE = "Duplicate";
-  string public constant AMOUNT_OUT_TOO_LOW =
-    "Amount out too low";
+  string public constant AMOUNT_OUT_TOO_LOW = "Amount out too low";
 
   bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
   bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -31,7 +36,10 @@ contract UniswapV2Trader is ITrader, AccessControlEnumerable {
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
   }
 
-  function execute(bytes calldata routeData) external onlyRole(EXECUTOR_ROLE) returns(uint256 realAmountOut) {
+  /// @dev No reentrancy possible, caller is the EXECUTOR_ROLE only (arbitrage contract)
+  function execute(
+    bytes calldata routeData
+  ) external onlyRole(EXECUTOR_ROLE) returns (uint256 realAmountOut) {
     // walks through the route (token, router)[] and swaps assets
     // uses token[0] as start collateral, contract must be fulfilled before the trade
     (, uint256 amountOutMin, Route.SinglePath[] memory route) = Route
@@ -39,28 +47,25 @@ contract UniswapV2Trader is ITrader, AccessControlEnumerable {
 
     Route.validateRoute(route);
 
-    (address tokenStart, address tokenEnd) = Route.getSideTokens(route);
-    require(
-      IERC20(tokenStart).balanceOf(address(this)) >= MIN_AMOUNT,
-      NOT_ENOUGH_START_COLLATERAL
-    );
+    (address tokenProfit, address tokenLoan) = Route.getFlashloanTokens(route);
 
     uint256 lastAmountOut;
 
-    for (uint256 pathId; pathId < route.length; ) {
+    uint256 amountStartIn = IERC20(tokenLoan).balanceOf(address(this));
+
+    require(amountStartIn >= MIN_AMOUNT, NOT_ENOUGH_START_COLLATERAL);
+
+    // do not trade flashloan path (already done in flashloan contract)
+    for (uint256 pathId = 1; pathId < route.length; ) {
       // swap through the current path
-      // if pathId == 0, start with flashloan token (already received on contract)
+      // if pathId == 1, start with flashloan token (already received on contract)
 
       address router = route[pathId].router;
-      uint256 amountIn = IERC20(route[pathId].tokens[0]).balanceOf(
-        address(this)
-      );
+      uint256 amountIn = pathId == 1
+        ? amountStartIn
+        : IERC20(route[pathId].tokens[0]).balanceOf(address(this));
 
-      lastAmountOut = _getAmountOut(
-        amountIn,
-        route[pathId].tokens,
-        router
-      );
+      lastAmountOut = _getAmountOut(amountIn, route[pathId].tokens, router);
 
       // swap through token path
       IERC20(route[pathId].tokens[0]).safeApprove(router, amountIn);
@@ -79,9 +84,11 @@ contract UniswapV2Trader is ITrader, AccessControlEnumerable {
 
     require(lastAmountOut >= amountOutMin, AMOUNT_OUT_TOO_LOW);
 
-    realAmountOut = IERC20(tokenEnd).balanceOf(address(this));
+    realAmountOut = IERC20(tokenProfit).balanceOf(address(this));
     // fulfill trader caller
-    IERC20(tokenEnd).safeTransfer(msg.sender, realAmountOut);
+    IERC20(tokenProfit).safeTransfer(msg.sender, realAmountOut);
+
+    emit ExecutedTrade(tokenLoan, tokenProfit, amountStartIn, realAmountOut);
   }
 
   function _getAmountOut(
