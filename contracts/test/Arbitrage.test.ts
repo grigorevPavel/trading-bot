@@ -8,8 +8,8 @@ import { BigNumber, BytesLike, Contract, ContractTransaction } from "ethers/lib/
 
 // ESSENTIAL TO IMPORT THIS
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { enableInitializer, encodeRoute, epsEqual, randomAddress, SinglePath } from "./helper";
-import { Arbitrage, Arbitrage__factory, FlashLoanTaker, FlashLoanTaker__factory, Reentrancy__factory, Token, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02, UniswapV2Trader, UniswapV2Trader__factory } from "@/typechain";
+import { calculateArbitrageAmountSimple, enableInitializer, encodeRoute, epsEqual, getOptimalAmountInSimple, getReservesForTokens, randomAddress, SinglePath } from "./helper";
+import { Arbitrage, Arbitrage__factory, FlashLoanTaker, FlashLoanTaker__factory, Reentrancy__factory, Token, Token__factory, UniswapV2Factory, UniswapV2Pair, UniswapV2Router02, UniswapV2Trader, UniswapV2Trader__factory } from "@/typechain";
 import { ERRORS } from "./Errors";
 
 describe('Arbitrage', () => {
@@ -72,7 +72,7 @@ describe('Arbitrage', () => {
     const logReserves = async (tokenFirst: Contract, tokenSecond: Contract, pair: UniswapV2Pair) => {
         const token0 = await pair.token0()
 
-        const {_reserve0, _reserve1} = await pair.getReserves()
+        const { _reserve0, _reserve1 } = await pair.getReserves()
 
         if (token0.toLowerCase() === tokenFirst.address.toLowerCase()) {
             console.log(`Reserves: ${_reserve0} | ${_reserve1}`)
@@ -166,13 +166,9 @@ describe('Arbitrage', () => {
         })
     })
 
-    const buyTokens = async (user:SignerWithAddress, router: UniswapV2Router02, tokenIn: Token, tokenOut: Token, amountIn: BigNumber) => {
+    const buyTokens = async (user: SignerWithAddress, router: UniswapV2Router02, tokenIn: Token, tokenOut: Token, amountIn: BigNumber) => {
         await tokenIn.connect(user).approve(router.address, amountIn)
         await router.connect(user).swapExactTokensForTokens(amountIn, ZERO, [tokenIn.address, tokenOut.address], user.address, deadline)
-    }
-
-    const calcMaxArbitrageAmount = async (pair0: UniswapV2Pair, pair1: UniswapV2Pair) => {
-        
     }
 
     describe('makeArbitrage', () => {
@@ -185,14 +181,14 @@ describe('Arbitrage', () => {
             // token is cheaper in router0 than in router1
             // price in router1 = 1:1
             // price in router0 = (100_000 + 1000) / (100_000 - 999.6) = 100_100 / 99_000
-           
+
             await buyTokens(user0, router0, token, usdt, delta)
 
             const pair0 = await getPair(usdt, token, router0)
             const pair1 = await getPair(usdt, token, router1)
 
-            await logReserves(usdt, token, pair0)
-            await logReserves(usdt, token, pair1)
+            // await logReserves(usdt, token, pair0)
+            // await logReserves(usdt, token, pair1)
 
             // const amountsTKN = await router0.getAmountsOut(ONE, [usdt.address, token.address])
             // const amountToken = amountsTKN[amountsTKN.length - 1]
@@ -220,18 +216,18 @@ describe('Arbitrage', () => {
 
             const arbitrageAmount = ONE
             const expectedOut = await getRouteAmountOut(arbitrageAmount, route)
-            
+
             const usdtBefore = await usdt.balanceOf(arbitrage.address)
             await arbitrage.connect(owner).makeArbitrage(true, arbitrageAmount, ZERO, route)
             const usdtAfter = await usdt.balanceOf(arbitrage.address)
 
             expect(expectedOut.sub(arbitrageAmount)).eq(usdtAfter.sub(usdtBefore))
 
-            await logReserves(usdt, token, pair0)
-            await logReserves(usdt, token, pair1)
+            // await logReserves(usdt, token, pair0)
+            // await logReserves(usdt, token, pair1)
         })
 
-        it.only('executes arbitrage if prices become ~equal after swap', async () => {
+        it('executes arbitrage with max input amount', async () => {
             // make price difference on 2 exchanges
             const delta = ONE.mul(1000)
             await token.mint(user0.address, delta)
@@ -240,22 +236,197 @@ describe('Arbitrage', () => {
             // token is cheaper in router0 than in router1
             // price in router1 = 1:1
             // price in router0 = (100_000 + 1000) / (100_000 - 999.6) = 100_100 / 99_000
-           
+
             await buyTokens(user0, router0, token, usdt, delta)
 
             const pair0 = await getPair(usdt, token, router0)
             const pair1 = await getPair(usdt, token, router1)
 
-            await logReserves(usdt, token, pair0)
-            await logReserves(usdt, token, pair1)
+            // await logReserves(usdt, token, pair0)
+            // await logReserves(usdt, token, pair1)
 
-            // const amountsTKN = await router0.getAmountsOut(ONE, [usdt.address, token.address])
-            // const amountToken = amountsTKN[amountsTKN.length - 1]
-            // console.log(amountToken.toString())
+            // console.log('---------------------------')
 
-            // const amountsUSDT = await router1.getAmountsOut(amountToken, [token.address, usdt.address])
-            // const amountUSDT = amountsUSDT[amountsUSDT.length - 1]
-            // console.log(amountUSDT.toString())
+            // buy token for USDT on exchange 0 and sell on exchange 1 for USDT
+            // USDT will be taken with flashloan
+
+            const route: SinglePath[] = [
+                {
+                    // flashswap path
+                    router: router0.address,
+                    tokens: [usdt.address, token.address]
+                },
+                {
+                    // trader path
+                    router: router1.address,
+                    tokens: [token.address, usdt.address]
+                }
+            ]
+
+            const arbitrageAmount = await calculateArbitrageAmountSimple(router0, router1, usdt, token, 0.003, 0)
+            // console.log('Arbitrage amount:', arbitrageAmount.toString())
+
+            // check that arbitrage amount is optimal (max profit)
+            const profit = await arbitrage.connect(owner).callStatic.makeArbitrage(true, arbitrageAmount, ZERO, route)
+            const profit0 = await arbitrage.connect(owner).callStatic.makeArbitrage(true, arbitrageAmount.mul(999).div(1000), ZERO, route)
+            const profit1 = await arbitrage.connect(owner).callStatic.makeArbitrage(true, arbitrageAmount.mul(1001).div(1000), ZERO, route)
+
+            expect(profit).gt(profit0)
+            expect(profit).gt(profit1)
+
+            const expectedOut = await getRouteAmountOut(arbitrageAmount, route)
+
+            const usdtBefore = await usdt.balanceOf(arbitrage.address)
+            await arbitrage.connect(owner).makeArbitrage(true, arbitrageAmount, ZERO, route)
+            const usdtAfter = await usdt.balanceOf(arbitrage.address)
+
+            expect(expectedOut.sub(arbitrageAmount)).eq(usdtAfter.sub(usdtBefore))
+
+            // await logReserves(usdt, token, pair0)
+            // await logReserves(usdt, token, pair1)
+        })
+
+        const prepareNewPools = async () => {
+            const tokenFactory = await ethers.getContractFactory<Token__factory>('Token')
+
+            const weth = await tokenFactory.deploy()
+            const doge = await tokenFactory.deploy()
+
+            await weth.mint(deployer.address, ONE.mul(1_000_000))
+            await doge.mint(deployer.address, ONE.mul(1_000_000))
+
+            await weth.approve(router0.address, ONE.mul(1_000_000))
+            await doge.approve(router0.address, ONE.mul(1_000_000))
+
+            await weth.approve(router1.address, ONE.mul(1_000_000))
+            await doge.approve(router1.address, ONE.mul(1_000_000))
+
+            // R0 (weth, doge) K = 100_000
+            await router0.addLiquidity(weth.address, doge.address, ONE.mul(100), ONE.mul(1_000), 0, 0, deployer.address, deadline)
+
+            // R1 (weth, doge) K = 125_000
+            await router1.addLiquidity(weth.address, doge.address, ONE.mul(50), ONE.mul(2_500), 0, 0, deployer.address, deadline)
+
+            return {
+                weth, doge,
+                pair0: await getPair(weth, doge, router0),
+                pair1: await getPair(weth, doge, router1)
+            }
+        }
+
+        it('executes arbitrage if pool K are different', async () => {
+            const { weth, doge, pair0, pair1 } = await prepareNewPools()
+
+            // await logReserves(weth, doge, pair0)
+            // await logReserves(weth, doge, pair1)
+
+            // console.log('---------------------------')
+
+            // buy DOGE for WETH on exchange 1 and sell on exchange 0 for WETH
+            // USDT will be taken with flashloan
+
+            const route: SinglePath[] = [
+                {
+                    // flashswap path
+                    router: router1.address,
+                    tokens: [weth.address, doge.address]
+                },
+                {
+                    // trader path
+                    router: router0.address,
+                    tokens: [doge.address, weth.address]
+                }
+            ]
+
+            const arbitrageAmount = await calculateArbitrageAmountSimple(router1, router0, weth, doge, 0.003, 0)
+            // console.log('Arbitrage Amount', arbitrageAmount.toString())
+
+            // check that arbitrage amount is optimal (max profit)
+            const profit = await arbitrage.connect(owner).callStatic.makeArbitrage(true, arbitrageAmount, ZERO, route)
+            const profit0 = await arbitrage.connect(owner).callStatic.makeArbitrage(true, arbitrageAmount.mul(999).div(1000), ZERO, route)
+            const profit1 = await arbitrage.connect(owner).callStatic.makeArbitrage(true, arbitrageAmount.mul(1001).div(1000), ZERO, route)
+
+            expect(profit).gt(profit0)
+            expect(profit).gt(profit1)
+
+            const expectedOut = await getRouteAmountOut(arbitrageAmount, route)
+
+            const wethBefore = await weth.balanceOf(arbitrage.address)
+            await arbitrage.connect(owner).makeArbitrage(true, arbitrageAmount, ZERO, route)
+            const wethAfter = await weth.balanceOf(arbitrage.address)
+
+            expect(expectedOut.sub(arbitrageAmount)).eq(wethAfter.sub(wethBefore))
+        })
+
+        describe('when called not from owner', () => {
+            it(`reverts with ${ERRORS.NOT_OWNER}`, async () => {
+                await expect(arbitrage.connect(user0).makeArbitrage(true, ZERO, ZERO, [])).revertedWith(ERRORS.NOT_OWNER)
+            })
+        })
+
+        describe('when arbitrage path does not consist of 2 tokens', () => {
+            it(`reverts with ${ERRORS.INVALID_SINGLE_PATH}`, async () => {
+                let route: SinglePath[] = [
+                    {
+                        // flashswap path
+                        router: router1.address,
+                        tokens: [usdt.address]
+                    },
+                    {
+                        // trader path
+                        router: router0.address,
+                        tokens: [token.address, usdt.address]
+                    }
+                ]
+                await expect(arbitrage.connect(owner).makeArbitrage(true, ZERO, ZERO, route)).revertedWith(ERRORS.INVALID_SINGLE_PATH)
+                route = [
+                    {
+                        // flashswap path
+                        router: router1.address,
+                        tokens: []
+                    },
+                    {
+                        // trader path
+                        router: router0.address,
+                        tokens: [token.address, usdt.address]
+                    }
+                ]
+                await expect(arbitrage.connect(owner).makeArbitrage(true, ZERO, ZERO, route)).revertedWith(ERRORS.INVALID_SINGLE_PATH)
+                 route = [
+                    {
+                        // flashswap path
+                        router: router1.address,
+                        tokens: [usdt.address, token.address, randomAddress()]
+                    },
+                    {
+                        // trader path
+                        router: router0.address,
+                        tokens: [token.address, usdt.address]
+                    }
+                ]
+                await expect(arbitrage.connect(owner).makeArbitrage(true, ZERO, ZERO, route)).revertedWith(ERRORS.INVALID_SINGLE_PATH)
+            })
+        })
+    })
+
+    describe('claimProfit', () => {
+        it('allows to claim profit after arbitrage', async () => {
+            // make price difference on 2 exchanges
+            const delta = ONE.mul(1000)
+            await token.mint(user0.address, delta)
+
+            // buy 100 usdt for token
+            // token is cheaper in router0 than in router1
+            // price in router1 = 1:1
+            // price in router0 = (100_000 + 1000) / (100_000 - 999.6) = 100_100 / 99_000
+
+            await buyTokens(user0, router0, token, usdt, delta)
+
+            const pair0 = await getPair(usdt, token, router0)
+            const pair1 = await getPair(usdt, token, router1)
+
+            // await logReserves(usdt, token, pair0)
+            // await logReserves(usdt, token, pair1)
 
             // buy token for USDT on exchange 0 and sell on exchange 1 for USDT
             // USDT will be taken with flashloan
@@ -275,15 +446,142 @@ describe('Arbitrage', () => {
 
             const arbitrageAmount = ONE
             const expectedOut = await getRouteAmountOut(arbitrageAmount, route)
-            
+
+            const profit = await arbitrage.connect(owner).callStatic.makeArbitrage(true, arbitrageAmount, ZERO, route)
+
             const usdtBefore = await usdt.balanceOf(arbitrage.address)
             await arbitrage.connect(owner).makeArbitrage(true, arbitrageAmount, ZERO, route)
             const usdtAfter = await usdt.balanceOf(arbitrage.address)
 
             expect(expectedOut.sub(arbitrageAmount)).eq(usdtAfter.sub(usdtBefore))
+            expect(profit).eq(usdtAfter.sub(usdtBefore))
 
-            await logReserves(usdt, token, pair0)
-            await logReserves(usdt, token, pair1)
+            // await logReserves(usdt, token, pair0)
+            // await logReserves(usdt, token, pair1)
+
+            const usdtOwnerBefore = await usdt.balanceOf(owner.address)
+            await arbitrage.connect(owner).claimProfit(usdt.address)
+            const usdtOwnerAfter = await usdt.balanceOf(owner.address)
+
+            expect(usdtOwnerAfter.sub(usdtOwnerBefore)).eq(profit)
+        })
+
+        describe('edge cases', () => {
+            describe('when called not by owner', () => {
+                it(`reverts with ${ERRORS.NOT_OWNER}`, async () => {
+                    // make price difference on 2 exchanges
+                    const delta = ONE.mul(1000)
+                    await token.mint(user0.address, delta)
+
+                    // buy 100 usdt for token
+                    // token is cheaper in router0 than in router1
+                    // price in router1 = 1:1
+                    // price in router0 = (100_000 + 1000) / (100_000 - 999.6) = 100_100 / 99_000
+
+                    await buyTokens(user0, router0, token, usdt, delta)
+
+                    const pair0 = await getPair(usdt, token, router0)
+                    const pair1 = await getPair(usdt, token, router1)
+
+                    // await logReserves(usdt, token, pair0)
+                    // await logReserves(usdt, token, pair1)
+
+                    // buy token for USDT on exchange 0 and sell on exchange 1 for USDT
+                    // USDT will be taken with flashloan
+
+                    const route: SinglePath[] = [
+                        {
+                            // flashswap path
+                            router: router0.address,
+                            tokens: [usdt.address, token.address]
+                        },
+                        {
+                            // trader path
+                            router: router1.address,
+                            tokens: [token.address, usdt.address]
+                        }
+                    ]
+
+                    const arbitrageAmount = ONE
+                    const expectedOut = await getRouteAmountOut(arbitrageAmount, route)
+
+                    const profit = await arbitrage.connect(owner).callStatic.makeArbitrage(true, arbitrageAmount, ZERO, route)
+
+                    const usdtBefore = await usdt.balanceOf(arbitrage.address)
+                    await arbitrage.connect(owner).makeArbitrage(true, arbitrageAmount, ZERO, route)
+                    const usdtAfter = await usdt.balanceOf(arbitrage.address)
+
+                    expect(expectedOut.sub(arbitrageAmount)).eq(usdtAfter.sub(usdtBefore))
+                    expect(profit).eq(usdtAfter.sub(usdtBefore))
+
+                    // await logReserves(usdt, token, pair0)
+                    // await logReserves(usdt, token, pair1)
+
+                    await expect(arbitrage.connect(user0).claimProfit(usdt.address)).revertedWith(ERRORS.NOT_OWNER)
+                })
+            })
+
+            describe('when no profit to claim', () => {
+                it(`reverts with ${ERRORS.NOTHING_TO_CLAIM}`, async () => {
+                    // make price difference on 2 exchanges
+                    const delta = ONE.mul(1000)
+                    await token.mint(user0.address, delta)
+
+                    // buy 100 usdt for token
+                    // token is cheaper in router0 than in router1
+                    // price in router1 = 1:1
+                    // price in router0 = (100_000 + 1000) / (100_000 - 999.6) = 100_100 / 99_000
+
+                    await buyTokens(user0, router0, token, usdt, delta)
+
+                    const pair0 = await getPair(usdt, token, router0)
+                    const pair1 = await getPair(usdt, token, router1)
+
+                    // await logReserves(usdt, token, pair0)
+                    // await logReserves(usdt, token, pair1)
+
+                    // buy token for USDT on exchange 0 and sell on exchange 1 for USDT
+                    // USDT will be taken with flashloan
+
+                    const route: SinglePath[] = [
+                        {
+                            // flashswap path
+                            router: router0.address,
+                            tokens: [usdt.address, token.address]
+                        },
+                        {
+                            // trader path
+                            router: router1.address,
+                            tokens: [token.address, usdt.address]
+                        }
+                    ]
+
+                    const arbitrageAmount = ONE
+                    const expectedOut = await getRouteAmountOut(arbitrageAmount, route)
+
+                    const profit = await arbitrage.connect(owner).callStatic.makeArbitrage(true, arbitrageAmount, ZERO, route)
+
+                    const usdtBefore = await usdt.balanceOf(arbitrage.address)
+                    await arbitrage.connect(owner).makeArbitrage(true, arbitrageAmount, ZERO, route)
+                    const usdtAfter = await usdt.balanceOf(arbitrage.address)
+
+                    expect(expectedOut.sub(arbitrageAmount)).eq(usdtAfter.sub(usdtBefore))
+                    expect(profit).eq(usdtAfter.sub(usdtBefore))
+
+                    // await logReserves(usdt, token, pair0)
+                    // await logReserves(usdt, token, pair1)
+
+                    await arbitrage.connect(owner).claimProfit(usdt.address)
+                    await expect(arbitrage.connect(owner).claimProfit(usdt.address)).revertedWith(ERRORS.NOTHING_TO_CLAIM)
+                    await expect(arbitrage.connect(owner).claimProfit(token.address)).revertedWith(ERRORS.NOTHING_TO_CLAIM)
+                })
+            })
+
+            describe('when token == 0', () => {
+                it(`reverts with ${ERRORS.ADDRESS_ZERO}`, async () => {
+                    await expect(arbitrage.connect(owner).claimProfit(ADDRESS_ZERO)).revertedWith(ERRORS.ADDRESS_ZERO)
+                })
+            })
         })
     })
 })

@@ -5,7 +5,6 @@ import { Arbitrage__factory, FlashLoanTaker__factory, TestToken__factory, TestTr
 
 import { abi as FACTORY_ABI, bytecode as FACTORY_BYTECODE } from '@uniswap/v2-core/build/UniswapV2Factory.json'
 import { abi as ROUTER_ABI, bytecode as ROUTER_BYTECODE } from '@uniswap/v2-periphery/build/UniswapV2Router02.json'
-import { Trader__factory } from '@/typechain/factories/Trader__factory'
 
 export const getSigners = async () => {
     const [deployer, user0, user1, owner] = await ethers.getSigners()
@@ -110,12 +109,14 @@ export async function deployTraderFixture() {
     const tokenB = await tokenFactory.connect(signers.deployer).deploy()
     const tokenC = await tokenFactory.connect(signers.deployer).deploy()
     const tokenD = await tokenFactory.connect(signers.deployer).deploy()
+    const tokenE = await tokenFactory.connect(signers.deployer).deploy()
 
     const uniFactoryFactory = baseUniswapState.factories.uniswapFactoryFactory
     const uniRouterFactory = baseUniswapState.factories.uniswapRouterFactory
 
     const newFactory = await uniFactoryFactory.connect(signers.deployer).deploy(signers.deployer.address)
     const newRouter = await uniRouterFactory.connect(signers.deployer).deploy(newFactory.address, baseUniswapState.weth.address)
+    const lastRouter = await uniRouterFactory.connect(signers.deployer).deploy(newFactory.address, baseUniswapState.weth.address)
 
     const factory = baseUniswapState.uniswapV2Factory
     const router = baseUniswapState.uniswapV2Router
@@ -127,11 +128,13 @@ export async function deployTraderFixture() {
     const ONE = ethers.constants.WeiPerEther
     const deadline = BigNumber.from(10).pow(10)
 
-    await tokenA.connect(signers.deployer).mint(signers.deployer.address, ONE.mul(200_000))
+    await tokenA.connect(signers.deployer).mint(signers.deployer.address, ONE.mul(300_000))
     await tokenB.connect(signers.deployer).mint(signers.deployer.address, ONE.mul(200_000))
 
     await tokenC.connect(signers.deployer).mint(signers.deployer.address, ONE.mul(200_000))
-    await tokenD.connect(signers.deployer).mint(signers.deployer.address, ONE.mul(200_000))
+    await tokenD.connect(signers.deployer).mint(signers.deployer.address, ONE.mul(300_000))
+
+    await tokenE.connect(signers.deployer).mint(signers.deployer.address, ONE.mul(100_000))
 
     await tokenA.connect(signers.deployer).approve(router.address, ONE.mul(100_000))
     await tokenB.connect(signers.deployer).approve(router.address, ONE.mul(100_000))
@@ -140,6 +143,9 @@ export async function deployTraderFixture() {
     await tokenC.connect(signers.deployer).approve(newRouter.address, ONE.mul(200_000))
     await tokenD.connect(signers.deployer).approve(newRouter.address, ONE.mul(200_000))
     await tokenA.connect(signers.deployer).approve(newRouter.address, ONE.mul(100_000))
+
+    await tokenD.connect(signers.deployer).approve(lastRouter.address, ONE.mul(100_000))
+    await tokenA.connect(signers.deployer).approve(lastRouter.address, ONE.mul(100_000))
 
     const MANAGER_ROLE = await trader.MANAGER_ROLE()
     const EXECUTOR_ROLE = await trader.EXECUTOR_ROLE()
@@ -195,12 +201,25 @@ export async function deployTraderFixture() {
         deadline
     )
 
+    // R3 (D, A)
+    await lastRouter.connect(signers.deployer).addLiquidity(
+        tokenD.address, 
+        tokenA.address, 
+        ONE.mul(100_000),
+        ONE.mul(100_000),
+        ONE.mul(100_000),
+        ONE.mul(100_000),
+        signers.deployer.address,
+        deadline
+    )
+
     return {
         signers,
-        tokens: [tokenA, tokenB, tokenC, tokenD],
+        tokens: [tokenA, tokenB, tokenC, tokenD, tokenE],
         trader, traderFactory,
         router0: router, 
         router1: newRouter,
+        router2: lastRouter,
         factory0: factory,
         factory1: newFactory
     }
@@ -271,7 +290,9 @@ export async function deployArbitrageFixture() {
     const flashloanFactory = await ethers.getContractFactory<FlashLoanTaker__factory>('FlashLoanTaker')
 
     const flashloan = await flashloanFactory.deploy(trader.address)
+
     await trader.connect(signers.deployer).grantRole(EXECUTOR_ROLE, flashloan.address)
+    
     await flashloan.transferOwnership(signers.owner.address)
 
     const arbitrageFactory = await ethers.getContractFactory<Arbitrage__factory>('Arbitrage')

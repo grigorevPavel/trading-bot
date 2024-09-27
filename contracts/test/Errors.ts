@@ -17,5 +17,5 @@ export const ERRORS = {
     NO_ROLE: (acc: string = "", role: string = "") => `AccessControl: account ${acc} is missing role ${role}`,
     NOT_EXECUTOR: 'Not executor',
     INIT_LOCKED: 'Initializable: contract is already initialized',
-
+    NOTHING_TO_CLAIM: "Nothing to claim",
 }

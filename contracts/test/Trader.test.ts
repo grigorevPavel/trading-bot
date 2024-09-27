@@ -21,10 +21,12 @@ describe('Trader', () => {
     let tokenB: Token
     let tokenC: Token
     let tokenD: Token
+    let tokenE: Token
     let factory0: UniswapV2Factory
     let factory1: UniswapV2Factory
     let router0: UniswapV2Router02
     let router1: UniswapV2Router02
+    let router2: UniswapV2Router02
     let trader: UniswapV2Trader
     let traderFactory: UniswapV2Trader__factory
 
@@ -50,6 +52,7 @@ describe('Trader', () => {
         factory1 = state.factory1
         router0 = state.router0
         router1 = state.router1
+        router2 = state.router2
 
         trader = state.trader
         traderFactory = state.traderFactory
@@ -104,6 +107,55 @@ describe('Trader', () => {
                     tokens: [
                         tokenB.address,
                         tokenC.address,
+                        tokenD.address,
+                        tokenA.address
+                    ]
+                }
+            ]
+
+            // start supply in tokenA
+            await tokenB.connect(deployer).mint(trader.address, ONE)
+
+            const amountOut = await trader.callStatic.execute(encodeRoute(ONE, ZERO, route))
+
+            // check amountOut
+            const expectedAmountOut = await getRouteAmountOut(ONE, route)
+
+            // no slippage
+            expect(amountOut).eq(expectedAmountOut)
+
+            // execute trade
+            const before = await tokenA.balanceOf(deployer.address)
+            await trader.execute(encodeRoute(ONE, ZERO, route))
+            const after = await tokenA.balanceOf(deployer.address)
+
+            expect(after.sub(before)).eq(amountOut)
+        })
+
+        it('works with more than 2 dexes at a trade', async () => {
+            // swap through all tokens
+            const route: SinglePath[] = [
+                {
+                    // flashloan path
+                    router: router0.address,
+                    tokens: [
+                        tokenA.address,
+                        tokenB.address,
+                    ]
+                },
+                {
+                    // trader path
+                    router: router1.address,
+                    tokens: [
+                        tokenB.address,
+                        tokenC.address,
+                        tokenD.address,
+                    ]
+                },
+                {
+                    // trader path
+                    router: router2.address,
+                    tokens: [
                         tokenD.address,
                         tokenA.address
                     ]

@@ -92,8 +92,15 @@ describe('FlashloanTaker', () => {
         await flashLoan.connect(owner).executeFlashSwap(false, routeData)
 
         const reservesAfter = await pair.getReserves()
-        expect(reservesAfter[0]).eq(reserves[0].sub(ONE))
-        expect(reservesAfter[1]).eq(reserves[1].add(amountIn))
+
+        if ((await pair.token0()).toLowerCase() === token0.address.toLowerCase()) {
+            expect(reservesAfter[0]).eq(reserves[0].sub(ONE))
+            expect(reservesAfter[1]).eq(reserves[1].add(amountIn))
+        } else {
+            expect(reservesAfter[1]).eq(reserves[1].sub(ONE))
+            expect(reservesAfter[0]).eq(reserves[0].add(amountIn))
+        }
+
     })
 
     it('allows to take a flash swap in token1', async () => {
@@ -109,7 +116,7 @@ describe('FlashloanTaker', () => {
         ]
 
         const routeData = encodeRoute(ONE, ZERO, route)
-        
+
 
         // set profit = amountIn on the test trader
         const amountIn = await getTargetAmount(ONE, [token0.address, token1.address], router)
@@ -123,8 +130,13 @@ describe('FlashloanTaker', () => {
         await flashLoan.connect(owner).executeFlashSwap(false, routeData)
 
         const reservesAfter = await pair.getReserves()
-        expect(reservesAfter[1]).eq(reserves[1].sub(ONE))
-        expect(reservesAfter[0]).eq(reserves[0].add(amountIn))
+        if ((await pair.token0()).toLowerCase() === token0.address.toLowerCase()) {
+            expect(reservesAfter[1]).eq(reserves[1].sub(ONE))
+            expect(reservesAfter[0]).eq(reserves[0].add(amountIn))
+        } else {
+            expect(reservesAfter[0]).eq(reserves[0].sub(ONE))
+            expect(reservesAfter[1]).eq(reserves[1].add(amountIn))
+        }
     })
 
     describe('edge cases', () => {
@@ -148,7 +160,7 @@ describe('FlashloanTaker', () => {
                 ]
 
                 const routeData = encodeRoute(ONE, ZERO, route)
-                
+
 
                 // take tokenA to get profit in tokenB
                 await expect(flashLoan.connect(owner).executeFlashSwap(false, routeData)).to.be.revertedWith(ERRORS.NOT_EXISTS)
@@ -175,7 +187,7 @@ describe('FlashloanTaker', () => {
                 ]
 
                 const routeData = encodeRoute(ONE.mul(100), ZERO, route)
-                
+
 
                 // set profit = amountIn on the test trader
                 const amountIn = await getTargetAmount(ONE.mul(100), [token1.address, token0.address], router)
@@ -278,7 +290,7 @@ describe('FlashloanTaker', () => {
                 ]
 
                 const routeData = encodeRoute(ONE.mul(100), ZERO, route)
-                
+
 
                 // set profit = amountIn on the test trader
                 const amountIn = await getTargetAmount(ONE.mul(100), [token1.address, token0.address], router)

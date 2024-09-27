@@ -65,10 +65,10 @@ contract Arbitrage is OwnableUpgradeable {
     uint256 flashloanAmount,
     uint256 amountOutMin,
     Route.SinglePath[] calldata route
-  ) external onlyOwner {
+  ) external onlyOwner returns(uint256 profit) {
     Route.validateRoute(route);
 
-    IFlashLoanTaker(flashloan).executeFlashSwap(
+    profit = IFlashLoanTaker(flashloan).executeFlashSwap(
       exactDebt,
       Route.encode(flashloanAmount, amountOutMin, route)
     );
@@ -80,6 +80,7 @@ contract Arbitrage is OwnableUpgradeable {
     require(token != address(0), ADDRESS_ZERO);
 
     uint256 balance = IERC20Upgradeable(token).balanceOf(address(this));
+    require(balance != 0, NOTHING_TO_CLAIM);
 
     emit ClaimedProfit(token, msg.sender, balance);
     IERC20Upgradeable(token).safeTransfer(msg.sender, balance);
