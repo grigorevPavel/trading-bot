@@ -6,8 +6,8 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const FACTORIES_DIR = 'config/factories'
-const TOKEN_ABI_PATH = 'config/Token.json'
+const FACTORIES_DIR = 'config/abis/factories'
+const TOKEN_ABI_PATH = 'config/abis/Token.json'
 
 export type FactoryContract = {
     name: string,
@@ -54,6 +54,8 @@ const main = async () => {
             factory.pairs.push(pairContract)
         }
     }
+
+    console.log(`Writing pairs data to ${RES_DIR}...`)
     
     fs.writeFileSync(RES_DIR, JSON.stringify(factories))
 }
