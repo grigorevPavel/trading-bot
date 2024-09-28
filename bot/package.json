@@ -1,0 +1,22 @@
+{
+  "name": "bot",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "daemon": "npx nodemon"
+  },
+  "_moduleAliases": {
+    "@": "."
+  },
+  "devDependencies": {
+    "@types/module-alias": "^2.0.4",
+    "@types/node": "^22.7.4",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.2",
+    "module-alias": "^2.2.3",
+    "nodemon": "^3.1.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {}
+}
