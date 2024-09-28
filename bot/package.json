@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "daemon": "npx nodemon"
+    "daemon": "npx nodemon",
+    "pairs": "ts-node src/factory/getPairs.ts"
   },
   "_moduleAliases": {
     "@": "."
