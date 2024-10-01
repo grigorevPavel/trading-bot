@@ -4,12 +4,14 @@
   "license": "MIT",
   "scripts": {
     "daemon": "npx nodemon",
-    "get-pairs": "ts-node src/factory/getPairs.ts"
+    "get-pairs": "ts-node src/factory/getPairs.ts",
+    "find-pairs": "ts-node src/factory/findPairsSimple.ts"
   },
   "_moduleAliases": {
     "@": "."
   },
   "devDependencies": {
+    "@types/cron": "^2.4.0",
     "@types/module-alias": "^2.0.4",
     "@types/node": "^22.7.4",
     "dotenv": "^16.4.5",
