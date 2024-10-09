@@ -1,0 +1,197 @@
+{
+    "name": "SmarDex",
+    "address": "0x41A00e3FbE7F479A99bA6822704d9c5dEB611F22",
+    "router": "0xDA3970a20cdc2B1269fc96C4E8D300E0fdDB7b3D",
+    "pairs": [
+        {
+            "address": "0xacCDd9EE1DCd393E346e5d6350230439b4DA09ab",
+            "token0": "0xabD587f2607542723b17f14d00d99b987C29b074",
+            "token1": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+        },
+        {
+            "address": "0xDDa160DdCF9C2606F60e68451FaAa25316df2CFd",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0xabD587f2607542723b17f14d00d99b987C29b074"
+        },
+        {
+            "address": "0x874318174C4BC9046e4a3AA7E6D2e2632B6760E1",
+            "token0": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+            "token1": "0xabD587f2607542723b17f14d00d99b987C29b074"
+        },
+        {
+            "address": "0xD87899d10Eaa10F3adE05038A38251F758E5C0eb",
+            "token0": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+            "token1": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+        },
+        {
+            "address": "0xFB661CD54A6048ddAc3285cE7E3654B3E380D637",
+            "token0": "0xabD587f2607542723b17f14d00d99b987C29b074",
+            "token1": "0xC96F2715E2a242d50D1b0bC923dbe1740b8eCf18"
+        },
+        {
+            "address": "0x81107b1c3df0121138e3d8f0A697146a8dE43314",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a"
+        },
+        {
+            "address": "0x848D5C6cB5F06a9AD97df755e8eD556eFEa04a69",
+            "token0": "0x3082CC23568eA640225c2467653dB90e9250AaA0",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0x59ff4666A64734726b2D1f087C260a7FCd7D9881",
+            "token0": "0x3A33473d7990a605a88ac72A78aD4EFC40a54ADB",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0x627798b84CD97B132559cf65fB03f67805fA7600",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0x912CE59144191C1204E64559FE8253a0e49E6548"
+        },
+        {
+            "address": "0x882518aaaCbB0788Bd51a97d9E4F6692605D8f08",
+            "token0": "0x98E2a9e59FeA4f78C07Cd08e9EF2dEB2D4F539d3",
+            "token1": "0xabD587f2607542723b17f14d00d99b987C29b074"
+        },
+        {
+            "address": "0x5053e51B6e75561034eA5daE2Cac7AC9F9D12BE9",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+        },
+        {
+            "address": "0xc27Cd2c908350909729D86B95Df405700cD2411D",
+            "token0": "0x912CE59144191C1204E64559FE8253a0e49E6548",
+            "token1": "0xabD587f2607542723b17f14d00d99b987C29b074"
+        },
+        {
+            "address": "0x70dEC90f83F5df5A0473DF86b96ded92055D216a",
+            "token0": "0xabD587f2607542723b17f14d00d99b987C29b074",
+            "token1": "0xE43b45C34e654B1038ceCdB57A0302A788FEA3F5"
+        },
+        {
+            "address": "0xE86be8ef8965DB0107127EC969336906908EB211",
+            "token0": "0xabD587f2607542723b17f14d00d99b987C29b074",
+            "token1": "0xAf9eBD6922A7C7C7e7663d7e2B2e5A72f70B1587"
+        },
+        {
+            "address": "0xD8eA4870a3cfEdD895ef767d2dEE2f3A72e7a0B4",
+            "token0": "0x1a09b007A6f16678a7bb4e90e98fD1bb0E074046",
+            "token1": "0xabD587f2607542723b17f14d00d99b987C29b074"
+        },
+        {
+            "address": "0x3CfFC000DC8Da9E0123b0058b364387f3537bFC1",
+            "token0": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0x4e215f37897A2CfEE98eb6379A23C9E709D49C3F",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0xf97f4df75117a78c1A5a0DBb814Af92458539FB4"
+        },
+        {
+            "address": "0xABd319d1C02D35e1CA7c28Bd4B8B45c45ffa0c49",
+            "token0": "0x539bdE0d7Dbd336b79148AA742883198BBF60342",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0x35180c273AEE13017c5ff60a469c6ee73154AD28",
+            "token0": "0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0x12EeB78E0c7590257EbD512342a26145245Bd088",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0x83d6c8C06ac276465e4C92E7aC8C23740F435140"
+        },
+        {
+            "address": "0x18B826C38f76360B13DBe34a44497916fe4c479b",
+            "token0": "0x18c11FD286C5EC11c3b683Caa813B77f5163A122",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0x2AEc11b2446Fce7e584aaE48e0bbbbC4Ebf2FFee",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0xAFccb724e3aec1657fC9514E3e53A0E71e80622D"
+        },
+        {
+            "address": "0x39247CA47Ec8A41aB659fAb13D7946cebE1Ec8Aa",
+            "token0": "0x8B0E6f19Ee57089F7649A455D89D7bC6314D04e8",
+            "token1": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+        },
+        {
+            "address": "0xa0a82d8b795Fa2a219f5f2700d0dd7fd6cD31D4b",
+            "token0": "0x51318B7D00db7ACc4026C88c3952B66278B6A67F",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0xC0011B85A8960ccDE76214c5cCb1223db7106709",
+            "token0": "0x6C2C06790b3E3E3c38e12Ee22F8183b37a13EE55",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0xd4c0061a67CE62Ad271e71814bbfA090a9CbC929",
+            "token0": "0x11Bf4f05EB28b802ED3aB672594DEcB20ffe2313",
+            "token1": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+        },
+        {
+            "address": "0xF57030F0d37e296393F4322c3C3b78Dfa2a94f63",
+            "token0": "0x3A18dcC9745eDcD1Ef33ecB93b0b6eBA5671e7Ca",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0xeec2Da3972016958Bf917108e93A9dAab4FF8F0C",
+            "token0": "0x51fC0f6660482Ea73330E414eFd7808811a57Fa2",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0x41fB204d1694DfC5aD33Fd52056a943cAD2f1FB9",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0xF19547f9ED24aA66b03c3a552D181Ae334FBb8DB"
+        },
+        {
+            "address": "0xb43fD002B185928065C07521d40Fe3a0762d52B4",
+            "token0": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+            "token1": "0xD77B108d4f6cefaa0Cae9506A934e825BEccA46E"
+        },
+        {
+            "address": "0x8024De87CA7f97f93B28C950098930823a495d92",
+            "token0": "0x20547341E58fB558637FA15379C92e11F7b7F710",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0xF7394a6E049b83a8607BB83aE67217CF73B59e14",
+            "token0": "0x033f193b3Fceb22a440e89A2867E8FEE181594D9",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0x8eDA469cb2E71484c2D298e1031d08f5add458bb",
+            "token0": "0x59A729658e9245B0cF1f8Cb9fb37945D2B06ea27",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0xa3C81d3a3e311A2f0DDf9B4c07F9661e43b3Ed12",
+            "token0": "0x1622bF67e6e5747b81866fE0b85178a93C7F86e3",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0x634D2Fd499FEE7422352dF960e0A1Dc675e11E2B",
+            "token0": "0x18c11FD286C5EC11c3b683Caa813B77f5163A122",
+            "token1": "0xabD587f2607542723b17f14d00d99b987C29b074"
+        },
+        {
+            "address": "0x57d3a8EC235b9493D916c90A271Dc21B56B826d3",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0xfD5Dc0cAEbE1913C989815800e456C7153D0B492"
+        },
+        {
+            "address": "0x72C6C9318a05601e2f7D9Fb94fC1e4A2a6AEbDfD",
+            "token0": "0x20547341E58fB558637FA15379C92e11F7b7F710",
+            "token1": "0xabD587f2607542723b17f14d00d99b987C29b074"
+        },
+        {
+            "address": "0xBa967FEC0f9420C25ffCE1B429172f3ABE07C5d3",
+            "token0": "0x655a6BeEBF2361A19549a99486FF65f709BD2646",
+            "token1": "0xabD587f2607542723b17f14d00d99b987C29b074"
+        }
+    ]
+}

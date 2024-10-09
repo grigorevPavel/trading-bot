@@ -1,7 +1,8 @@
 declare namespace NodeJs {
     interface ProcessEnv {
         PRIVATE_KEY: string,
-        RPC_BAHAMUT: string
+        RPC: string,
+        MULTICALL: string
     }
 }
 

@@ -1,0 +1,62 @@
+[
+    {
+        "pair0": {
+            "factory": {
+                "name": "KujataSwap",
+                "address": "0x63D19A275fd468aA5A29FAc7B14697Ca0b5B3315"
+            },
+            "token0": "0x4084aB20f8ffcA76C19AAF854Fb5fe9DE6217fBB",
+            "token1": "0xDeF886C55a79830C47108eeb9c37e78a49684e41",
+            "address": "0x1F267d46c146039026cD33F6429032B774a07173"
+        },
+        "pair1": {
+            "factory": {
+                "name": "SilkSwap",
+                "address": "0xd0c5d23290d63e06a0c4b87f14bd2f7aa551a895"
+            },
+            "token0": "0x4084aB20f8ffcA76C19AAF854Fb5fe9DE6217fBB",
+            "token1": "0xDeF886C55a79830C47108eeb9c37e78a49684e41",
+            "address": "0xa6546F0509c6D4A7B7E6388888A7141CA0Da2AbD"
+        }
+    },
+    {
+        "pair0": {
+            "factory": {
+                "name": "KujataSwap",
+                "address": "0x63D19A275fd468aA5A29FAc7B14697Ca0b5B3315"
+            },
+            "token0": "0x4084aB20f8ffcA76C19AAF854Fb5fe9DE6217fBB",
+            "token1": "0x4237e0A5b55233D5B6D6d1D9BF421723954130D8",
+            "address": "0x7125547a90e8CbAf1c14C9f214697f190b8d25a2"
+        },
+        "pair1": {
+            "factory": {
+                "name": "SilkSwap",
+                "address": "0xd0c5d23290d63e06a0c4b87f14bd2f7aa551a895"
+            },
+            "token0": "0x4084aB20f8ffcA76C19AAF854Fb5fe9DE6217fBB",
+            "token1": "0x4237e0A5b55233D5B6D6d1D9BF421723954130D8",
+            "address": "0x9448cb1c997192Cb3969c306d3ea021E07AB1D43"
+        }
+    },
+    {
+        "pair0": {
+            "factory": {
+                "name": "KujataSwap",
+                "address": "0x63D19A275fd468aA5A29FAc7B14697Ca0b5B3315"
+            },
+            "token0": "0x4237e0A5b55233D5B6D6d1D9BF421723954130D8",
+            "token1": "0xDeF886C55a79830C47108eeb9c37e78a49684e41",
+            "address": "0x2A3766bE51f95bece0853d88Ca82D5A26Fd803d5"
+        },
+        "pair1": {
+            "factory": {
+                "name": "SilkSwap",
+                "address": "0xd0c5d23290d63e06a0c4b87f14bd2f7aa551a895"
+            },
+            "token0": "0x4237e0A5b55233D5B6D6d1D9BF421723954130D8",
+            "token1": "0xDeF886C55a79830C47108eeb9c37e78a49684e41",
+            "address": "0xFcB0aE13B736C4141c1391D1EBa32A79dca59BBB"
+        }
+    }
+]

@@ -5,7 +5,8 @@
   "scripts": {
     "daemon": "npx nodemon",
     "get-pairs": "ts-node src/factory/getPairs.ts",
-    "find-pairs": "ts-node src/factory/findPairsSimple.ts"
+    "find-pairs": "ts-node src/factory/findPairsSimple.ts",
+    "clear-pairs": "rm -rf src/factory/parsedFactories/*"
   },
   "_moduleAliases": {
     "@": "."

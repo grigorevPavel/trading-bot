@@ -1,0 +1,47 @@
+{
+    "name": "SpartaDex",
+    "address": "0xFe8EC10Fe07A6a6f4A2584f8cD9FE232930eAF55",
+    "router": "0x89AE36E3B567b914a5E97E6488C6EB5b9C5d0231",
+    "pairs": [
+        {
+            "address": "0x4993E9d7C2C76760Ac1cBd1674D44152a59dAaeD",
+            "token0": "0x11F98c7E42A367DaB4f200d2fdc460fb445CE9a8",
+            "token1": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+        },
+        {
+            "address": "0x5F6B6c3eeC0126a4f3C57D68CA491Ac95B149556",
+            "token0": "0x580E933D90091b9cE380740E3a4A39c67eB85B4c",
+            "token1": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+        },
+        {
+            "address": "0xdd90A3DA9688ccCa100dd4DA1786677bC459f069",
+            "token0": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+            "token1": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+        },
+        {
+            "address": "0x6aeb4449b6364f6f0a5B59b30A490dddf38602bC",
+            "token0": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+            "token1": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+        },
+        {
+            "address": "0x2d17EbAdaEfC0B99E38C79B015EacE06277e8906",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0x912CE59144191C1204E64559FE8253a0e49E6548"
+        },
+        {
+            "address": "0x2af377fC46be2e14Ec770EdCd026679B4030aFcd",
+            "token0": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "token1": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+        },
+        {
+            "address": "0xdbE87106385DbfE3E9F486B9bd472Ec92bfEcde1",
+            "token0": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+            "token1": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+        },
+        {
+            "address": "0x7126FAb2b32013f56BB108E5D14D244de91259F2",
+            "token0": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+            "token1": "0xB299751B088336E165dA313c33e3195B8c6663A6"
+        }
+    ]
+}

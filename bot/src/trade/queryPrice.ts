@@ -5,7 +5,7 @@ import { abi as RESERVES_ABI } from './reservesABI.json'
 import dotenv from 'dotenv'
 dotenv.config()
 
-export const queryPriceUniV2 = async (pairData: PairContract, provider: ethers.JsonRpcProvider = new ethers.JsonRpcProvider(process.env.RPC_BAHAMUT), pairAbi: any[] = RESERVES_ABI) => {
+export const queryPriceUniV2 = async (pairData: PairContract, provider: ethers.JsonRpcProvider = new ethers.JsonRpcProvider(process.env.RPC), pairAbi: any[] = RESERVES_ABI) => {
     const pair = new ethers.Contract(pairData.address, pairAbi, provider)
 
     const reserves = await pair.getReserves()

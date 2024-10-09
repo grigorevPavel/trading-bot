@@ -14,7 +14,7 @@ const PAIRS_PATH = 'src/factory/pathsSimple.json'
 
 const main = async () => {
     const swapFee = 0.003
-    const provider = new ethers.JsonRpcProvider(process.env.RPC_BAHAMUT)
+    const provider = new ethers.JsonRpcProvider(process.env.RPC)
     const network = await provider.getNetwork()
     console.log(`Connected to chain ${network.chainId}...`)
 
@@ -30,8 +30,8 @@ const main = async () => {
         const res0 = await queryPriceUniV2(path.pair0, provider)
         const res1 = await queryPriceUniV2(path.pair1, provider)
 
-        console.log(`  PriceD for pair0: ${res0.priceD}`)
-        console.log(`  PriceD for pair1: ${res1.priceD}`)
+        console.log(` - PriceD for pair0: ${res0.priceD}`)
+        console.log(` - PriceD for pair1: ${res1.priceD}`)
 
         const tokenBase = detectBaseToken(path.pair0.token0, path.pair0.token1)
         if (tokenBase !== ethers.ZeroAddress) {
@@ -84,17 +84,19 @@ const main = async () => {
                     ;[arbitrageAmount, reservesOptimal] = arbitrageAmount2 > arbitrageAmount4 ? [arbitrageAmount2, reservesArbitrage2] : [arbitrageAmount4, reservesArbitrage4]
             }
 
+            // console.log(reservesOptimal)
+
             if (arbitrageAmount > 0) {
-                console.log('  !!! FOUND AN ARBITRAGE OPPRTUNITY ...')
-                console.log(`  Optimal Arbitrage amount = ${arbitrageAmount}`)
+                console.log('!!! FOUND AN ARBITRAGE OPPRTUNITY ...')
+                console.log(`Optimal Arbitrage amount = ${arbitrageAmount}`)
 
                 maxProfit = calculateMaxPossibleProfitSimple(arbitrageAmount, reservesOptimal, swapFee)
-                console.log(`  Max Arbitrage profit = ${maxProfit}`)
+                console.log(`Max Arbitrage profit = ${maxProfit}`)
             } else {
-                console.log('  Fees are too high for making arbitrage ...')
+                console.log('Fees are too high for making arbitrage ...')
             }
         } else {
-            console.log(` Pair does not have Base Tokens, skipping...`)
+            console.log(`Pair does not have Base Tokens, skipping...`)
         }
     }
 
