@@ -1,3 +1,5 @@
 node_modules
 .env
 build
+src/factory/logs.txt
+src/factory/possibleArbitrage.txt 

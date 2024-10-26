@@ -217,11 +217,17 @@ export const getBaseTokenInfo = (
 export const formatAmount = (amount: bigint, decimals: bigint = 18n, precision: bigint = 3n) => {
     const unit = 10n ** decimals
     const fixedPart = amount / unit
-    const floatPart = amount * precision / unit
+    const floatPart = amount * (10n**precision) / unit
 
-    return `${fixedPart}.${floatPart}`
+    let strFloatPart = ''
+    if (floatPart === 0n) strFloatPart = '0'
+    else if (floatPart < 10n) strFloatPart = `00${floatPart}`
+    else if (floatPart < 100n) strFloatPart = `0${floatPart}`
+    else strFloatPart = `${floatPart}`
+
+    return `${fixedPart}.${strFloatPart}`
 }
 
 export const checkAmount = (amount: bigint, decimals: bigint = 18n, precision: bigint = 3n) => {
-    return amount * precision / 10n**decimals !== 0n
+    return amount * (10n**precision) / (10n**decimals) !== 0n
 }

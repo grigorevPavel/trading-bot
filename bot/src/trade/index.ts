@@ -155,6 +155,18 @@ const main = async () => {
                         ARBITRAGE_OPPORTUNITIES_PATH
                     )
                     log(
+                        `Tokens ${path.pair0.token0} | ${path.pair0.token1}`,
+                        false,
+                        true,
+                        ARBITRAGE_OPPORTUNITIES_PATH
+                    )
+                    log(
+                        `Pair1 ${path.pair0.address} | ${path.pair1.address}`,
+                        false,
+                        true,
+                        ARBITRAGE_OPPORTUNITIES_PATH
+                    )
+                    log(
                         `Optimal Arbitrage amount = ${arbitrageAmount} wei, ${formatAmount(
                             arbitrageAmount,
                             BigInt(tokenData.decimals)
