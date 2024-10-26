@@ -1,15 +1,22 @@
-import { Contract, ethers } from 'ethers'
-import { ZeroAddress } from 'ethers'
-import fs from 'fs'
+import { Contract, ethers } from "ethers"
+import { ZeroAddress } from "ethers"
+import fs from "fs"
+import * as tokensConfig from "../factory/tokens.json"
+
+export const CHAIN_ID: Number = 42161
 
 export type Reserves = {
-    reserveProfit0: bigint,
-    reserveTrade0: bigint,
-    reserveProfit1: bigint,
-    reserveTrade1: bigint,
+    reserveProfit0: bigint
+    reserveTrade0: bigint
+    reserveProfit1: bigint
+    reserveTrade1: bigint
 }
 
-export const calculateArbitrageAmountSimple = (reserves: Reserves, fee: number = 0, slippage: number = 0) => {
+export const calculateArbitrageAmountSimple = (
+    reserves: Reserves,
+    fee: number = 0,
+    slippage: number = 0
+) => {
     // tokenProfit => tokenTrade | router0
     // tokenTrade => tokenProfit | router1
 
@@ -26,11 +33,22 @@ export const calculateArbitrageAmountSimple = (reserves: Reserves, fee: number =
 
     // fee = uniswap v2 fee (0.3% = 0.003)
     // slippage = 1% (0.01)
-    const amount = (getOptimalAmountInSimple(Number(A / DENOMINATOR), Number(B / DENOMINATOR), Number(C / DENOMINATOR), Number(D / DENOMINATOR), fee, slippage))
+    const amount = getOptimalAmountInSimple(
+        Number(A / DENOMINATOR),
+        Number(B / DENOMINATOR),
+        Number(C / DENOMINATOR),
+        Number(D / DENOMINATOR),
+        fee,
+        slippage
+    )
     return toBigInt(amount, DENOMINATOR)
 }
 
-export const calculateMaxPossibleProfitSimple = (amountIn: bigint, reserves: Reserves, fee: number = 0) => {
+export const calculateMaxPossibleProfitSimple = (
+    amountIn: bigint,
+    reserves: Reserves,
+    fee: number = 0
+) => {
     const A = reserves.reserveProfit0
     const B = reserves.reserveTrade0
     const C = reserves.reserveTrade1
@@ -44,23 +62,51 @@ export const calculateMaxPossibleProfitSimple = (amountIn: bigint, reserves: Res
     const DENOMINATOR = getDENOMINATOR(minValue)
 
     // fee = uniswap v2 fee (0.3% = 0.003)
-    const profit = (getMaxPossibleProfitSimple(Number(amountIn / DENOMINATOR), Number(A / DENOMINATOR), Number(B / DENOMINATOR), Number(C / DENOMINATOR), Number(D / DENOMINATOR), fee))
+    const profit = getMaxPossibleProfitSimple(
+        Number(amountIn / DENOMINATOR),
+        Number(A / DENOMINATOR),
+        Number(B / DENOMINATOR),
+        Number(C / DENOMINATOR),
+        Number(D / DENOMINATOR),
+        fee
+    )
     return toBigInt(profit, DENOMINATOR)
 }
 
-const getMaxPossibleProfitSimple = (x: number, A: number, B: number, C: number, D: number, fee: number) => {
+const getMaxPossibleProfitSimple = (
+    x: number,
+    A: number,
+    B: number,
+    C: number,
+    D: number,
+    fee: number
+) => {
     /*
         P(x) = x * B * D * (1 - f)^2 / (A * C + x * C * (1 - f) + x * B * (1 - f)^2) - x
     */
 
-    return (x * B * D * (1 - fee) ** 2) / (A * C + x * C * (1 - fee) + x * B * (1 - fee) ** 2) - x
+    return (
+        (x * B * D * (1 - fee) ** 2) /
+            (A * C + x * C * (1 - fee) + x * B * (1 - fee) ** 2) -
+        x
+    )
 }
 
-const getOptimalAmountInSimple = (A: number, B: number, C: number, D: number, fee: number, slippage: number) => {
+const getOptimalAmountInSimple = (
+    A: number,
+    B: number,
+    C: number,
+    D: number,
+    fee: number,
+    slippage: number
+) => {
     /*
         amountIn = (-AC + (1 - f) * sqrt(ABCD)) / ((1 - f) * C + (1 - f)^2 * B)
     */
-    return (Math.sqrt(A * B * C * D * (1 - slippage)) * (1 - fee) - A * C) / ((1 - fee) * C + B * ((1 - fee) ** 2))
+    return (
+        (Math.sqrt(A * B * C * D * (1 - slippage)) * (1 - fee) - A * C) /
+        ((1 - fee) * C + B * (1 - fee) ** 2)
+    )
 }
 
 function toBigInt(value: number, DENOMINATOR: bigint) {
@@ -74,8 +120,7 @@ function getDENOMINATOR(value: bigint) {
         DENOMINATOR = 10n ** (24n - delta)
     } else if (value > 10n ** 20n) {
         DENOMINATOR = 10n ** (20n - delta)
-    }
-    else if (value > 10n ** 16n) {
+    } else if (value > 10n ** 16n) {
         DENOMINATOR = 10n ** (16n - delta)
     } else if (value > 10n ** 12n) {
         DENOMINATOR = 10n ** (12n - delta)
@@ -95,20 +140,17 @@ export const getReservesForTokens = async (pair: Contract, tokenA: string) => {
     if (token0.toLowerCase() === tokenA.toLowerCase())
         return {
             reserveA: reserves[0],
-            reserveB: reserves[1]
+            reserveB: reserves[1],
         }
     else
         return {
             reserveA: reserves[1],
-            reserveB: reserves[0]
+            reserveB: reserves[0],
         }
 }
 
-const TOKENS_PATH = 'src/trade/tokens.json'
-const tokens = JSON.parse(fs.readFileSync(TOKENS_PATH, 'utf-8'))
-
 export const detectBaseToken = (token0: string, token1: string) => {
-    const baseTokens = tokens.baseTokens
+    const baseTokens = tokensConfig.baseTokens
 
     let token0Profit = false
     let token1Profit = false
@@ -126,16 +168,60 @@ export const detectBaseToken = (token0: string, token1: string) => {
     return ZeroAddress
 }
 
-export const getTokenInfo = (tkn: string) => {
-    const tokenInfo = tokens.tokens
-    for (let { name, symbol, decimals, address } of tokenInfo) {
-        if (address.toLowerCase() === tkn.toLowerCase())
-            return {
-                name,
-                symbol,
-                decimals,
-                address
-            }
+export const eqAddresses = (a: string, b: string) => {
+    return a.toLowerCase() === b.toLowerCase()
+}
 
+export const LOG_PATH = "src/trade/logs.txt"
+
+export const log = (
+    logMessage: string,
+    useConsole = true,
+    useFile = true,
+    logPath = LOG_PATH
+) => {
+    if (useConsole) console.log(logMessage)
+    if (useFile) fs.appendFileSync(logPath, logMessage + "\n")
+}
+
+export const getNow = () => {
+    let date = new Date()
+
+    return date.toTimeString()
+}
+
+export const getBaseTokenInfo = (
+    token: string
+): {
+    name: string
+    symbol: string
+    decimals: number
+    address: string
+} => {
+    const baseTokens = tokensConfig.baseTokens
+
+    for (let baseToken of baseTokens) {
+        if (eqAddresses(token, baseToken.address)) {
+            return baseToken
+        }
     }
+
+    return {
+        name: "",
+        symbol: "",
+        decimals: 0,
+        address: "",
+    }
+}
+
+export const formatAmount = (amount: bigint, decimals: bigint = 18n, precision: bigint = 3n) => {
+    const unit = 10n ** decimals
+    const fixedPart = amount / unit
+    const floatPart = amount * precision / unit
+
+    return `${fixedPart}.${floatPart}`
+}
+
+export const checkAmount = (amount: bigint, decimals: bigint = 18n, precision: bigint = 3n) => {
+    return amount * precision / 10n**decimals !== 0n
 }

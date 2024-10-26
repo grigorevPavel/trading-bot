@@ -65,11 +65,13 @@
       "baseUrl": ".",
       "paths": {
         "@/*": ["*"],
-        "@env": ["src/env/"]
+        "@env": ["src/env/"],
+        "@config": ["config/"]
       }
     },
     "include": [
         "src/*",
-        "env.d.ts", "src/env/loadEnv.ts",
+        "env.d.ts",
+        "config/"
     ]
 }
