@@ -26,6 +26,7 @@ const PAIRS_PATH = "src/factory/pathsSimple.json"
 import { pairs } from "../factory/pairs.json"
 
 const ARBITRAGE_OPPORTUNITIES_PATH = "src/trade/possibleArbitrage.txt"
+const MIN_BASE_CURRENCY_PROFIT = BigInt(process.env.MIN_BASE_CURRENCY_PROFIT ?? 0n)
 
 const main = async () => {
     const swapFee = 0.003
@@ -146,7 +147,7 @@ const main = async () => {
                     )} ${tokenData.symbol}`
                 )
 
-                if (checkAmount(maxProfit, BigInt(tokenData.decimals))) {
+                if (checkAmount(maxProfit, BigInt(tokenData.decimals), MIN_BASE_CURRENCY_PROFIT, BigInt(tokenData.priceFactor))) {
                     // additional log into another file
                     log(
                         `${getNow()}`,
@@ -238,7 +239,7 @@ const max = (a: bigint, b: bigint, c: bigint, d: bigint) => {
 }
 
 const job = new CronJob(
-    "*/5 * * * * *", // cronTime
+    process.env.CRON_JOB || "*/5 * * * * *", // cronTime
     main, // onTick
     null, // onComplete
     true // start

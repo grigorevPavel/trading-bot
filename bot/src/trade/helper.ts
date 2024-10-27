@@ -196,7 +196,8 @@ export const getBaseTokenInfo = (
     name: string
     symbol: string
     decimals: number
-    address: string
+    address: string,
+    priceFactor: number
 } => {
     const baseTokens = tokensConfig.baseTokens
 
@@ -211,23 +212,37 @@ export const getBaseTokenInfo = (
         symbol: "",
         decimals: 0,
         address: "",
+        priceFactor: 0
     }
 }
 
-export const formatAmount = (amount: bigint, decimals: bigint = 18n, precision: bigint = 3n) => {
+export const formatAmount = (
+    amount: bigint,
+    decimals: bigint = 18n
+) => {
     const unit = 10n ** decimals
     const fixedPart = amount / unit
-    const floatPart = amount * (10n**precision) / unit
+    const precision = 6n
+    const floatPart = (amount * 10n ** precision) / unit
 
-    let strFloatPart = ''
-    if (floatPart === 0n) strFloatPart = '0'
-    else if (floatPart < 10n) strFloatPart = `00${floatPart}`
-    else if (floatPart < 100n) strFloatPart = `0${floatPart}`
+    let strFloatPart = ""
+    if (floatPart === 0n) strFloatPart = "0"
+    else if (floatPart < 10n) strFloatPart = `00000${floatPart}`
+    else if (floatPart < 100n) strFloatPart = `0000${floatPart}`
+    else if (floatPart < 1000n) strFloatPart = `000${floatPart}`
+    else if (floatPart < 10000n) strFloatPart = `00${floatPart}`
+    else if (floatPart < 100000n) strFloatPart = `0${floatPart}`
     else strFloatPart = `${floatPart}`
 
     return `${fixedPart}.${strFloatPart}`
 }
 
-export const checkAmount = (amount: bigint, decimals: bigint = 18n, precision: bigint = 3n) => {
-    return amount * (10n**precision) / (10n**decimals) !== 0n
+export const checkAmount = (
+    amount: bigint,
+    decimals: bigint = 18n,
+    baseCurrencyAmount: bigint = 1n,
+    priceNumerator: bigint = 1n,
+    priceDenominator: bigint = 1n,
+) => {
+    return amount * priceNumerator >= 10n ** decimals * baseCurrencyAmount / priceDenominator
 }
