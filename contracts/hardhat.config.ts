@@ -81,6 +81,18 @@ const config: HardhatUserConfig = {
       deploy: ['deploy/localhost/'],
       tags: ['localhost']
     },
+    arbitrum_mainnet: {
+      deploy: ['deploy/mainnet/'],
+      tags: ['mainnet'],
+      url: process.env.ARBITRUM_URL ?? 'undefined',
+      accounts: process.env.PRIVATE_MAIN?.split(','),
+      verify: {
+        etherscan: {
+          apiKey: process.env.ARBITRUM_API ?? 'undefined',
+          apiUrl: process.env.ARBITRUM_API_URL ?? 'undefined'
+        }
+      }
+    },
     // place networks here
   },
   gasReporter: {
